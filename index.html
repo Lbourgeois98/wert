@@ -5,6 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ShawnSweeps</title>
+  
+  <!-- Wert.io script -->
+  <script src="https://widget.wert.io/widget-init.js"></script>
+  
   <style>
     /* === Reset & Layout === */
     * {
@@ -44,6 +48,43 @@
     header img {
       width: 220px;
       filter: drop-shadow(0 0 10px rgba(250, 10, 10, 0.6));
+    }
+
+    /* Deposit Button */
+    .deposit-section {
+      text-align: center;
+      margin: 20px 0 40px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .deposit-section h2 {
+      font-size: 24px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    #openWidget {
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      color: white;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(250, 10, 10, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #openWidget:hover {
+      background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(250, 10, 10, 0.6);
     }
 
     /* Game Grid */
@@ -98,53 +139,19 @@
 </head>
 
 <body>
+  <video id="bg-video" src="https://shawn-sweepstakes.carrd.co/assets/videos/bg.mp4?v=0c91e9dc" autoplay loop muted playsinline></video>
 
-  <video id="bg-video" src="https://shawn-sweepstakes.carrd.co/assets/videos/bg.mp4?v=0c91e9dc" autoplay loop muted
-    playsinline></video>
-
+  <header>
     <img src="https://shawn-sweepstakes.carrd.co/assets/images/image03.png?v=0c91e9dc" alt="ShawnSweeps">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wert.io Popup Example</title>
+  </header>
 
-  <!-- Wert.io script -->
-  <script src="https://widget.wert.io/widget-init.js"></script>
-  <!-- Your JS file -->
-  <script src="script.js" defer></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background: #f4f4f9;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #0078ff;
-      color: white;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #005fcc;
-    }
-  </style>
-</head>
-<body>
-
-  <h2>deposit</h2>
-  <button id="openWidget">Open Widget</button>
-
-</body>
+  <div class="deposit-section">
+    <h2>Deposit</h2>
+    <button id="openWidget">Open Deposit Widget</button>
+  </div>
 
   <section id="games"></section>
+
   <script>
     const games = [
       { id: "megaspinsweeps", name: "Mega Spin Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/85307f95.jpg?v=0c91e9dc", gameUrl: "http://www.megaspinsweeps.com/index.html" },
@@ -169,7 +176,7 @@
       { id: "magiccity", name: "Magic City", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/71d5fc8f.jpg?v=0c91e9dc", gameUrl: "https://www.magiccity777.com/SSLobby/3657.0/web-mobile/index.html" },
       { id: "highstake", name: "High Stake Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/e1d3a0f7.jpg?v=0c91e9dc", gameUrl: "https://dl.highstakesweeps.com/" },
       { id: "sincity", name: "Sin City", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/98333b44.jpg?v=0c91e9dc", gameUrl: "https://sincitysweeps.net/" },
-      { id: "vegassweeps", name: "Vegas Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/bd38d36f.jpg?v=0c91e9dc", gameUrl: "https://m.lasvegassweeps.com/" },
+      { id: "vegassweeps", name: "Vegas Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/bd38d36f.jpg?v=0c91e9dc", gameUrl: "https://lasvegassweeps.com/" },
       { id: "ignite", name: "IGNITE", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/3603f518.png?v=0c91e9dc", gameUrl: "https://casinoignite.vip/" },
       { id: "cashfrenzy", name: "Cashapp Frenzy", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a67374ce.jpg?v=0c91e9dc", gameUrl: "https://www.cashfrenzy777.com/" },
       { id: "acebook", name: "ACEBOOK", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/09e14951.jpg?v=0c91e9dc", gameUrl: "https://www.playacebook.mobi/" },
@@ -210,9 +217,37 @@
         card.innerHTML = `<a href="${g.gameUrl}" target="_blank"><img src="${g.imageUrl}" alt="${g.name}"></a>`;
         gamesEl.appendChild(card);
       });
+
+      // Wert.io Widget Integration
+      document.getElementById("openWidget").addEventListener("click", function () {
+        try {
+          const wertWidget = new WertWidget({
+            "partner_id": "01K0FHM9K6ATK1CYCHMV34Z0YG",
+            "origin": "https://sandbox.wert.io",
+            "extra": {
+              "wallets": [
+                {
+                  "name": "TT",
+                  "network": "amoy",
+                  "address": "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
+                },
+                {
+                  "name": "ETH",
+                  "network": "sepolia",
+                  "address": "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
+                }
+              ]
+            }
+          });
+          
+          wertWidget.mount(); // Opens the popup
+        } catch (error) {
+          console.error("Error initializing Wert widget:", error);
+          alert("Unable to open deposit widget. Please try again later.");
+        }
+      });
     });
   </script>
 
 </body>
-
 </html>
