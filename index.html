@@ -202,6 +202,16 @@
       color: #0c5460;
       border: 1px solid #bee5eb;
     }
+
+    /* Widget info display */
+    .widget-info {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 14px;
+      color: #ccc;
+      position: relative;
+      z-index: 10;
+    }
   </style>
 </head>
 
@@ -213,7 +223,10 @@
   </header>
 
   <div class="deposit-section">
-    <h2>Deposit</h2>
+    <h2>Deposit Crypto</h2>
+    <div class="widget-info">
+      Supports ETH (Sepolia) & TT (Amoy) - Sandbox Mode
+    </div>
     <button id="openWidget">
       <span id="button-text">Open Deposit Widget</span>
     </button>
@@ -224,7 +237,6 @@
   <!-- Status message container -->
   <div id="status-message" class="status-message"></div>
 
-  <!-- Load Wert.io widget with multiple fallbacks -->
   <script>
     // Widget loading status
     let wertWidgetLoaded = false;
@@ -380,7 +392,7 @@
       // Initialize Wert widget loading
       initializeWertWidget();
 
-      // Wert.io Widget Integration with comprehensive error handling
+      // Wert.io Widget Integration with multi-wallet configuration
       document.getElementById("openWidget").addEventListener("click", function () {
         
         // Check if widget is loaded
@@ -396,16 +408,27 @@
         }
 
         try {
-          console.log('🎯 Creating Wert widget with configuration...');
+          console.log('🎯 Creating Wert widget with multi-wallet configuration...');
           
           const widgetConfig = {
             partner_id: "01K0FHM9K6ATK1CYCHMV34Z0YG",
             origin: "https://sandbox.wert.io",
             
-            // Crypto purchase configuration
-            commodity: "ETH",
-            network: "sepolia", // Sepolia testnet for sandbox
-            address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d",
+            // Multi-wallet configuration - exactly as you provided
+            extra: {
+              wallets: [
+                {
+                  name: "TT",
+                  network: "amoy",
+                  address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
+                },
+                {
+                  name: "ETH",
+                  network: "sepolia",
+                  address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
+                }
+              ]
+            },
             
             // Optional settings
             commodity_amount: 0.01, // Minimum amount for testing
@@ -433,10 +456,14 @@
               position: (position) => {
                 console.log('📍 Widget position updated:', position);
               },
-              payment-status: (data) => {
+              'payment-status': (data) => {
                 console.log('💳 Payment status update:', data);
                 if (data.status === 'success') {
                   showStatus('Payment completed successfully!', 'success', 5000);
+                } else if (data.status === 'pending') {
+                  showStatus('Payment is being processed...', 'info', 3000);
+                } else if (data.status === 'failed') {
+                  showStatus('Payment failed. Please try again.', 'error', 5000);
                 }
               }
             }
