@@ -6,8 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ShawnSweeps</title>
   
-  <!-- Wert.io script -->
-  <script src="https://widget.wert.io/widget-init.js"></script>
+  <!-- Fix CSP to allow Wert.io widget -->
+  <meta http-equiv="Content-Security-Policy" content="
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://sandbox.wert.io https://widget.wert.io; 
+    frame-src 'self' https://sandbox.wert.io https://widget.wert.io; 
+    connect-src 'self' https://sandbox.wert.io https://api.wert.io https://widget.wert.io;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https:;
+  ">
   
   <style>
     /* === Reset & Layout === */
@@ -87,6 +93,30 @@
       box-shadow: 0 6px 20px rgba(250, 10, 10, 0.6);
     }
 
+    #openWidget:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Loading indicator */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #ff6b6b;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     /* Game Grid */
     #games {
       display: grid;
@@ -135,6 +165,43 @@
       transform: scale(1.1);
       box-shadow: 0 0 25px rgba(250, 10, 10, 0.6);
     }
+
+    /* Status messages */
+    .status-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-weight: bold;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s ease;
+    }
+
+    .status-message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .status-message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status-message.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
   </style>
 </head>
 
@@ -147,12 +214,102 @@
 
   <div class="deposit-section">
     <h2>Deposit</h2>
-    <button id="openWidget">Open Deposit Widget</button>
+    <button id="openWidget">
+      <span id="button-text">Open Deposit Widget</span>
+    </button>
   </div>
 
   <section id="games"></section>
 
+  <!-- Status message container -->
+  <div id="status-message" class="status-message"></div>
+
+  <!-- Load Wert.io widget with multiple fallbacks -->
   <script>
+    // Widget loading status
+    let wertWidgetLoaded = false;
+    let wertLoadingAttempts = 0;
+    const maxLoadingAttempts = 3;
+
+    // Show status message
+    function showStatus(message, type = 'info', duration = 3000) {
+      const statusEl = document.getElementById('status-message');
+      statusEl.textContent = message;
+      statusEl.className = `status-message ${type} show`;
+      
+      setTimeout(() => {
+        statusEl.classList.remove('show');
+      }, duration);
+    }
+
+    // Update button state
+    function updateButtonState(loading = false, text = 'Open Deposit Widget') {
+      const button = document.getElementById('openWidget');
+      const buttonText = document.getElementById('button-text');
+      
+      button.disabled = loading;
+      buttonText.innerHTML = loading ? `${text} <span class="loading"></span>` : text;
+    }
+
+    // Load Wert widget with fallbacks
+    function loadWertWidget(url, onSuccess, onError) {
+      console.log(`Attempting to load Wert widget from: ${url}`);
+      
+      const script = document.createElement('script');
+      script.src = url;
+      script.crossOrigin = 'anonymous';
+      
+      script.onload = () => {
+        console.log(`✅ Wert widget loaded successfully from: ${url}`);
+        wertWidgetLoaded = true;
+        if (onSuccess) onSuccess();
+      };
+      
+      script.onerror = () => {
+        console.error(`❌ Failed to load Wert widget from: ${url}`);
+        if (onError) onError();
+      };
+      
+      document.head.appendChild(script);
+    }
+
+    // Try multiple CDNs for Wert widget
+    function initializeWertWidget() {
+      const cdnUrls = [
+        'https://unpkg.com/@wert-io/widget-initializer@latest/dist/widget-initializer.js',
+        'https://cdn.jsdelivr.net/npm/@wert-io/widget-initializer@latest/dist/widget-initializer.js'
+      ];
+
+      function tryNextCDN() {
+        if (wertLoadingAttempts >= cdnUrls.length) {
+          console.error('❌ All Wert widget CDNs failed to load');
+          showStatus('Failed to load deposit widget. Please refresh the page.', 'error', 5000);
+          updateButtonState(false, 'Widget Unavailable');
+          return;
+        }
+
+        const currentUrl = cdnUrls[wertLoadingAttempts];
+        wertLoadingAttempts++;
+
+        loadWertWidget(
+          currentUrl,
+          () => {
+            showStatus('Deposit widget loaded successfully!', 'success');
+            updateButtonState(false);
+          },
+          () => {
+            console.log(`Trying next CDN... (${wertLoadingAttempts}/${cdnUrls.length})`);
+            tryNextCDN();
+          }
+        );
+      }
+
+      // Start loading
+      updateButtonState(true, 'Loading Widget');
+      tryNextCDN();
+    }
+
+    // Games data
     const games = [
       { id: "megaspinsweeps", name: "Mega Spin Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/85307f95.jpg?v=0c91e9dc", gameUrl: "http://www.megaspinsweeps.com/index.html" },
       { id: "vblink777", name: "VBLink777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/753a32c3.jpg?v=0c91e9dc", gameUrl: "https://www.vblink777.club/" },
@@ -207,10 +364,12 @@
       { id: "kraken", name: "The Kraken", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/f6ee4ae8.jpg?v=0c91e9dc", gameUrl: "https://getthekraken.com/" }
     ];
 
-    // Populate game grid
+    // Initialize page when DOM loads
     document.addEventListener("DOMContentLoaded", () => {
+      console.log('🚀 ShawnSweeps loading...');
+      
+      // Populate game grid
       const gamesEl = document.getElementById("games");
-
       games.forEach(g => {
         const card = document.createElement("div");
         card.className = "game-card";
@@ -218,36 +377,121 @@
         gamesEl.appendChild(card);
       });
 
-      // Wert.io Widget Integration
+      // Initialize Wert widget loading
+      initializeWertWidget();
+
+      // Wert.io Widget Integration with comprehensive error handling
       document.getElementById("openWidget").addEventListener("click", function () {
+        
+        // Check if widget is loaded
+        if (!wertWidgetLoaded) {
+          showStatus('Widget is still loading. Please wait...', 'info');
+          return;
+        }
+
+        if (typeof WertWidget === 'undefined') {
+          console.error('❌ WertWidget is not available');
+          showStatus('Widget not available. Please refresh the page and try again.', 'error', 5000);
+          return;
+        }
+
         try {
-          const wertWidget = new WertWidget({
-            "partner_id": "01K0FHM9K6ATK1CYCHMV34Z0YG",
-            "origin": "https://sandbox.wert.io",
-            "extra": {
-              "wallets": [
-                {
-                  "name": "TT",
-                  "network": "amoy",
-                  "address": "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
-                },
-                {
-                  "name": "ETH",
-                  "network": "sepolia",
-                  "address": "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
+          console.log('🎯 Creating Wert widget with configuration...');
+          
+          const widgetConfig = {
+            partner_id: "01K0FHM9K6ATK1CYCHMV34Z0YG",
+            origin: "https://sandbox.wert.io",
+            
+            // Crypto purchase configuration
+            commodity: "ETH",
+            network: "sepolia", // Sepolia testnet for sandbox
+            address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d",
+            
+            // Optional settings
+            commodity_amount: 0.01, // Minimum amount for testing
+            
+            // UI customization
+            color_background: "#1a1a1a",
+            color_buttons: "#ff6b6b",
+            color_buttons_text: "#ffffff",
+            color_main_text: "#ffffff",
+            color_secondary_text: "#cccccc",
+            
+            // Event listeners for monitoring
+            listeners: {
+              loaded: () => {
+                console.log('✅ Wert widget UI loaded successfully');
+                showStatus('Deposit widget opened successfully!', 'success');
+              },
+              close: () => {
+                console.log('ℹ️ Wert widget closed by user');
+              },
+              error: (error) => {
+                console.error('❌ Wert widget runtime error:', error);
+                showStatus('Widget error occurred. Please try again.', 'error');
+              },
+              position: (position) => {
+                console.log('📍 Widget position updated:', position);
+              },
+              payment-status: (data) => {
+                console.log('💳 Payment status update:', data);
+                if (data.status === 'success') {
+                  showStatus('Payment completed successfully!', 'success', 5000);
                 }
-              ]
+              }
             }
+          };
+
+          console.log('🔧 Widget configuration:', widgetConfig);
+
+          // Create and mount widget
+          const wertWidget = new WertWidget(widgetConfig);
+          
+          console.log('🚀 Mounting Wert widget...');
+          wertWidget.mount();
+          
+        } catch (error) {
+          console.error("❌ Error initializing Wert widget:", error);
+          console.error("📊 Error details:", {
+            message: error.message,
+            stack: error.stack,
+            wertWidgetType: typeof WertWidget,
+            wertWidgetLoaded: wertWidgetLoaded
           });
           
-          wertWidget.mount(); // Opens the popup
-        } catch (error) {
-          console.error("Error initializing Wert widget:", error);
-          alert("Unable to open deposit widget. Please try again later.");
+          // User-friendly error messages
+          let userMessage = 'Unable to open deposit widget.';
+          
+          if (error.message.includes('partner_id')) {
+            userMessage = 'Invalid partner configuration. Please contact support.';
+          } else if (error.message.includes('network') || error.message.includes('address')) {
+            userMessage = 'Invalid wallet configuration. Please contact support.';
+          } else if (error.message.includes('WertWidget')) {
+            userMessage = 'Widget library error. Please refresh the page and try again.';
+          }
+          
+          showStatus(userMessage, 'error', 5000);
         }
       });
+
+      console.log('✅ ShawnSweeps initialized successfully');
+    });
+
+    // Global error handler
+    window.addEventListener('error', (event) => {
+      if (event.filename && event.filename.includes('wert')) {
+        console.error('🚨 Wert-related JavaScript error:', event.error);
+      }
+    });
+
+    // Handle unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      if (event.reason && event.reason.toString().includes('wert')) {
+        console.error('🚨 Wert-related promise rejection:', event.reason);
+      }
     });
   </script>
 
 </body>
+
 </html>
