@@ -1,38 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ShawnSweeps</title>
-  
-  <!-- Fix CSP to allow Wert.io widget -->
-  <meta http-equiv="Content-Security-Policy" content="
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://sandbox.wert.io https://widget.wert.io; 
-    frame-src 'self' https://sandbox.wert.io https://widget.wert.io; 
-    connect-src 'self' https://sandbox.wert.io https://api.wert.io https://widget.wert.io;
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' data: https:;
-  ">
-  
   <style>
-    /* === Reset & Layout === */
+    /* === Reset & Scroll Fix === */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
-    body,
-    html {
+    body, html {
       width: 100%;
       min-height: 100vh;
       overflow-x: hidden;
+      overflow-y: auto;
       font-family: Arial, sans-serif;
       color: white;
+      position: relative;
     }
 
-    /* Video Background */
+    /* === Video Background === */
     #bg-video {
       position: fixed;
       top: 0;
@@ -42,82 +31,89 @@
       object-fit: cover;
       z-index: -2;
     }
-
-    /* Header */
-    header {
-      text-align: center;
-      margin: 30px 0;
-      position: relative;
-      z-index: 10;
+    .video-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: -1;
     }
 
+    /* === Header & Logo === */
+    header {
+      margin-top: 30px;
+      margin-bottom: 30px;
+      text-align: center;
+      z-index: 10;
+      position: relative;
+    }
     header img {
       width: 220px;
       filter: drop-shadow(0 0 10px rgba(250, 10, 10, 0.6));
     }
 
-    /* Deposit Button */
-    .deposit-section {
-      text-align: center;
-      margin: 20px 0 40px;
-      position: relative;
+    /* === Deposit Buttons Container === */
+    .deposit-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 90%;
+      max-width: 400px;
+      margin: 0 auto 40px auto;
       z-index: 10;
+      position: relative;
     }
 
-    .deposit-section h2 {
-      font-size: 24px;
-      margin-bottom: 15px;
-      text-transform: uppercase;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    }
-
-    #openWidget {
-      padding: 15px 30px;
-      font-size: 18px;
+    /* === Wert Widget Button === */
+    .wert-button {
+      background: linear-gradient(45deg, #ff0000, #000000);
+      color: white;
       border: none;
+      padding: 16px 32px;
+      font-size: 17px;
+      font-weight: bold;
       border-radius: 12px;
       cursor: pointer;
-      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-      color: white;
-      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
       text-transform: uppercase;
       letter-spacing: 1px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(250, 10, 10, 0.4);
-      border: 2px solid rgba(255, 255, 255, 0.2);
+      width: 100%;
     }
 
-    #openWidget:hover {
-      background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+    .wert-button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(250, 10, 10, 0.6);
+      box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+      background: linear-gradient(45deg, #6366f1, #8b5cf6);
     }
 
-    #openWidget:disabled {
-      background: #666;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+    .wert-button:active {
+      transform: translateY(0);
     }
 
-    /* Loading indicator */
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #ff6b6b;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-left: 10px;
+    /* === Button Divider === */
+    .button-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .button-divider::before,
+    .button-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .button-divider span {
+      padding: 0 15px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Game Grid */
+    /* === Game Grid === */
     #games {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -128,29 +124,38 @@
       position: relative;
       z-index: 10;
     }
-
     @media (max-width: 1024px) {
       #games {
         grid-template-columns: repeat(3, 1fr);
       }
     }
-
     @media (max-width: 500px) {
       #games {
         grid-template-columns: repeat(2, 1fr);
       }
+      .deposit-buttons {
+        flex-direction: column;
+      }
     }
 
+    /* === Game Card (Round) === */
     .game-card {
       position: relative;
       width: 100%;
       padding-bottom: 100%;
       border-radius: 50%;
       overflow: hidden;
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.5);
       transition: all 0.3s;
     }
-
+    .game-card::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      background: linear-gradient(45deg, #fa0a0a, #ff8c00);
+      border-radius: 50%;
+      z-index: -1;
+    }
     .game-card img {
       position: absolute;
       top: 0;
@@ -160,365 +165,491 @@
       object-fit: cover;
       border-radius: 50%;
     }
-
     .game-card:hover {
       transform: scale(1.1);
       box-shadow: 0 0 25px rgba(250, 10, 10, 0.6);
     }
 
-    /* Status messages */
-    .status-message {
+    /* === Modal === */
+    #depositModal {
+      display: none;
       position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 15px 20px;
-      border-radius: 8px;
-      font-weight: bold;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
       z-index: 1000;
-      opacity: 0;
-      transform: translateY(-20px);
-      transition: all 0.3s ease;
+      justify-content: center;
+      align-items: center;
     }
-
-    .status-message.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .status-message.success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-
-    .status-message.error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    .status-message.info {
-      background: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
-    }
-
-    /* Widget info display */
-    .widget-info {
-      text-align: center;
-      margin: 10px 0;
-      font-size: 14px;
-      color: #ccc;
+    .modal-content {
+      background: #111;
+      padding: 30px;
+      border-radius: 14px;
+      width: 90%;
+      max-width: 500px;
+      color: white;
+      border: 1px solid #fa0a0a;
+      box-shadow: 0 0 30px rgba(250, 10, 10, 0.3);
       position: relative;
-      z-index: 10;
+    }
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 24px;
+      color: #ccc;
+      cursor: pointer;
+    }
+    .close-btn:hover {
+      color: white;
+    }
+    h2 {
+      margin-bottom: 20px;
+      font-size: 22px;
+      color: #fa0a0a;
+      text-align: center;
+    }
+    label {
+      display: block;
+      text-align: left;
+      margin: 15px 0 5px;
+      font-weight: bold;
+      color: #ddd;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      background: #222;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button[type="submit"] {
+      margin-top: 20px;
+      padding: 14px;
+      background: #fa0a0a;
+      color: white;
+      border: none;
+      width: 100%;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button[type="submit"]:hover {
+      background: #e00909;
     }
   </style>
 </head>
-
 <body>
-  <video id="bg-video" src="https://shawn-sweepstakes.carrd.co/assets/videos/bg.mp4?v=0c91e9dc" autoplay loop muted playsinline></video>
 
+  <!-- Video Background -->
+  <video id="bg-video"
+         src="https://shawn-sweepstakes.carrd.co/assets/videos/bg.mp4?v=0c91e9dc"
+         poster="https://shawn-sweepstakes.carrd.co/assets/videos/bg.mp4.jpg?v=0c91e9dc"
+         autoplay
+         preload="auto"
+         loop
+         playsinline
+         disablepictureinpicture
+         disableremoteplayback
+         webkit-playsinline
+         muted>
+  </video>
+  <div class="video-overlay"></div>
+
+  <!-- Header -->
   <header>
-    <img src="https://shawn-sweepstakes.carrd.co/assets/images/image03.png?v=0c91e9dc" alt="ShawnSweeps">
+    <img src="https://shawn-sweepstakes.carrd.co/assets/images/image03.png?v=0c91e9dc" alt="ShawnSweeps Logo">
   </header>
 
-  <div class="deposit-section">
-    <h2>Deposit Crypto</h2>
-    <div class="widget-info">
-      Supports ETH (Sepolia) & TT (Amoy) - Sandbox Mode
-    </div>
-    <button id="openWidget">
-      <span id="button-text">Open Deposit Widget</span>
+  <!-- Deposit Buttons -->
+  <div class="deposit-buttons">
+    <button class="wert-button" id="wertButton">
+      Deposit
     </button>
   </div>
 
-  <section id="games"></section>
-
-  <!-- Status message container -->
-  <div id="status-message" class="status-message"></div>
+  <!-- Game Grid -->
+  <section id="games">
+    <!-- Games will be injected here -->
+  </section>
 
   <script>
-    // Widget loading status
-    let wertWidgetLoaded = false;
-    let wertLoadingAttempts = 0;
-    const maxLoadingAttempts = 3;
-
-    // Show status message
-    function showStatus(message, type = 'info', duration = 3000) {
-      const statusEl = document.getElementById('status-message');
-      statusEl.textContent = message;
-      statusEl.className = `status-message ${type} show`;
-      
-      setTimeout(() => {
-        statusEl.classList.remove('show');
-      }, duration);
-    }
-
-    // Update button state
-    function updateButtonState(loading = false, text = 'Open Deposit Widget') {
-      const button = document.getElementById('openWidget');
-      const buttonText = document.getElementById('button-text');
-      
-      button.disabled = loading;
-      buttonText.innerHTML = loading ? `${text} <span class="loading"></span>` : text;
-    }
-
-    // Load Wert widget with fallbacks
-    function loadWertWidget(url, onSuccess, onError) {
-      console.log(`Attempting to load Wert widget from: ${url}`);
-      
-      const script = document.createElement('script');
-      script.src = url;
-      script.crossOrigin = 'anonymous';
-      
-      script.onload = () => {
-        console.log(`✅ Wert widget loaded successfully from: ${url}`);
-        wertWidgetLoaded = true;
-        if (onSuccess) onSuccess();
-      };
-      
-      script.onerror = () => {
-        console.error(`❌ Failed to load Wert widget from: ${url}`);
-        if (onError) onError();
-      };
-      
-      document.head.appendChild(script);
-    }
-
-    // Try multiple CDNs for Wert widget
-    function initializeWertWidget() {
-      const cdnUrls = [
-        'https://unpkg.com/@wert-io/widget-initializer@latest/dist/widget-initializer.js',
-        'https://cdn.jsdelivr.net/npm/@wert-io/widget-initializer@latest/dist/widget-initializer.js'
-      ];
-
-      function tryNextCDN() {
-        if (wertLoadingAttempts >= cdnUrls.length) {
-          console.error('❌ All Wert widget CDNs failed to load');
-          showStatus('Failed to load deposit widget. Please refresh the page.', 'error', 5000);
-          updateButtonState(false, 'Widget Unavailable');
-          return;
-        }
-
-        const currentUrl = cdnUrls[wertLoadingAttempts];
-        wertLoadingAttempts++;
-
-        loadWertWidget(
-          currentUrl,
-          () => {
-            showStatus('Deposit widget loaded successfully!', 'success');
-            updateButtonState(false);
-          },
-          () => {
-            console.log(`Trying next CDN... (${wertLoadingAttempts}/${cdnUrls.length})`);
-            tryNextCDN();
-          }
-        );
-      }
-
-      // Start loading
-      updateButtonState(true, 'Loading Widget');
-      tryNextCDN();
-    }
-
-    // Games data
+    // === Your Games Data (from your file) ===
     const games = [
-      { id: "megaspinsweeps", name: "Mega Spin Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/85307f95.jpg?v=0c91e9dc", gameUrl: "http://www.megaspinsweeps.com/index.html" },
-      { id: "vblink777", name: "VBLink777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/753a32c3.jpg?v=0c91e9dc", gameUrl: "https://www.vblink777.club/" },
-      { id: "goldentreasure", name: "Golden Treasure", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/7c9b03e5.jpg?v=0c91e9dc", gameUrl: "https://www.goldentreasure.mobi/" },
-      { id: "orionstars", name: "Orion Stars", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/417aedb1.png?v=0c91e9dc", gameUrl: "http://start.orionstars.vip:8580/index.html" },
-      { id: "firekirin", name: "Fire Kirin", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/189aadee.jpg?v=0c91e9dc", gameUrl: "http://start.firekirin.xyz:8580/index.html" },
-      { id: "rivermonster", name: "River Monster", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/253c9f08.jpg?v=0c91e9dc", gameUrl: "https://rm777.net/" },
-      { id: "riversweeps", name: "Riversweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/597c1510.jpg?v=0c91e9dc", gameUrl: "https://bet777.eu/" },
-      { id: "fortune2go", name: "Fortune 2 Go", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/d1498abc.jpg?v=0c91e9dc", gameUrl: "https://www.fortune2go20.com/mobile/Login/index.html" },
-      { id: "goldendragon", name: "Golden Dragon", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/de5f04bc.jpg?v=0c91e9dc", gameUrl: "https://playgd.mobi/SSLobby/3733.0/web-mobile/index.html" },
-      { id: "bludragon", name: "Blu Dragon", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/faeeb77b.png?v=0c91e9dc", gameUrl: "http://app.bluedragon777.com/" },
-      { id: "vegasx", name: "VEGAS X", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/1e472144.jpg?v=0c91e9dc", gameUrl: "https://vegas-x.org/" },
-      { id: "ultrapanda", name: "ULTRAPANDA", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/ad5dd9c6.jpg?v=0c91e9dc", gameUrl: "https://www.ultrapanda.mobi/" },
-      { id: "milkyways", name: "MILKY WAYS", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/2bc0a981.jpg?v=0c91e9dc", gameUrl: "https://milkywayapp.xyz/" },
-      { id: "luckypenny", name: "LUCKY PENNY", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/9b984f9c.jpg?v=0c91e9dc", gameUrl: "http://luckypenny.xyz:8580/index.html" },
-      { id: "gametime", name: "Gametime", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/85307f95.jpg?v=0c91e9dc", gameUrl: "http://game-time.vip:8580/index.html" },
-      { id: "goldstar", name: "Gold Star", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/74eb627d.jpg?v=0c91e9dc", gameUrl: "https://goldstar.games/" },
-      { id: "100plus", name: "100 Plus", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/e00a2881.jpg?v=0c91e9dc", gameUrl: "https://99.100plus.me/lobby/1684487595/index.html?agreement=1&/player/release/" },
-      { id: "gamevault", name: "Gamevault", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/050dac4a.jpg?v=0c91e9dc", gameUrl: "https://download.gamevault999.com/" },
-      { id: "galaxyworld", name: "Galaxy World", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/1f44c7e1.png?v=0c91e9dc", gameUrl: "https://m.galaxyworld999.com/" },
-      { id: "magiccity", name: "Magic City", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/71d5fc8f.jpg?v=0c91e9dc", gameUrl: "https://www.magiccity777.com/SSLobby/3657.0/web-mobile/index.html" },
-      { id: "highstake", name: "High Stake Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/e1d3a0f7.jpg?v=0c91e9dc", gameUrl: "https://dl.highstakesweeps.com/" },
-      { id: "sincity", name: "Sin City", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/98333b44.jpg?v=0c91e9dc", gameUrl: "https://sincitysweeps.net/" },
-      { id: "vegassweeps", name: "Vegas Sweeps", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/bd38d36f.jpg?v=0c91e9dc", gameUrl: "https://lasvegassweeps.com/" },
-      { id: "ignite", name: "IGNITE", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/3603f518.png?v=0c91e9dc", gameUrl: "https://casinoignite.vip/" },
-      { id: "cashfrenzy", name: "Cashapp Frenzy", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a67374ce.jpg?v=0c91e9dc", gameUrl: "https://www.cashfrenzy777.com/" },
-      { id: "acebook", name: "ACEBOOK", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/09e14951.jpg?v=0c91e9dc", gameUrl: "https://www.playacebook.mobi/" },
-      { id: "bluedragon2", name: "Blue Dragon 2", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/637eb5ee.png?v=0c91e9dc", gameUrl: "http://app.getbluedragon.com/" },
-      { id: "juwa777", name: "Juwa777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/bebb5d9e.jpg?v=0c91e9dc", gameUrl: "https://dl.juwa777.com/" },
-      { id: "pandamaster", name: "Panda Master", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/0b6843e0.jpg?v=0c91e9dc", gameUrl: "https://pandamaster.vip:8888/index.html" },
-      { id: "fishglory", name: "Fish Glory", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/346fd5a6.jpg?v=0c91e9dc", gameUrl: "https://www.fishglory.games/" },
-      { id: "vegasroll", name: "Vegas Roll", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/7867671f.jpg?v=0c91e9dc", gameUrl: "http://www.vegas-roll.com/m" },
-      { id: "mrallinone", name: "Mr All In One", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/d6f9845f.jpg?v=0c91e9dc", gameUrl: "https://www.mrallinone777.com/m" },
-      { id: "orionpower", name: "ORION Power", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/6c415d9a.jpg?v=0c91e9dc", gameUrl: "http://product.orionpower.games/v1001/" },
-      { id: "quakegame", name: "Quake Game", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/0c63b506.jpg?v=0c91e9dc", gameUrl: "https://www.quakegame.net/" },
-      { id: "vegasluck777", name: "Vegas Luck 777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/961ffa7e.jpg?v=0c91e9dc", gameUrl: "https://start.vegasluck777.com/" },
-      { id: "noble777", name: "Noble 777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/21cf31e9.jpg?v=0c91e9dc", gameUrl: "https://www.noble777.com/m" },
-      { id: "cashmachine777", name: "Cash Machine 777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/d68e85e8.jpg?v=0c91e9dc", gameUrl: "https://www.cashmachine777.com/m" },
-      { id: "gameroom777", name: "Game Room 777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/92bca02e.jpg?v=0c91e9dc", gameUrl: "https://www.gameroom777.com/m" },
-      { id: "luckystars", name: "Lucky Stars", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/990e95bf.jpg?v=0c91e9dc", gameUrl: "http://www.luckystars.games/m" },
-      { id: "slots88888", name: "Slots 88888", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/035f8253.jpg?v=0c91e9dc", gameUrl: "https://www.slots88888.com/m" },
-      { id: "winstar99999", name: "Win Star 99999", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/b48ed188.jpg?v=0c91e9dc", gameUrl: "http://server.winstar99999.com:8009/m" },
-      { id: "mafia77777", name: "Mafia 77777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a3830c1f.jpg?v=0c91e9dc", gameUrl: "http://product.mafia77777.com/v1003/" },
-      { id: "yolo777", name: "YOLO 777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/e1b31467.jpg?v=0c91e9dc", gameUrl: "https://yolo777.game/" },
-      { id: "fpc", name: "FPC Mobile", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/2eb63b4e.png?v=0c91e9dc", gameUrl: "https://fpc-mob.com/AD/index.html" },
-      { id: "winnersclub777", name: "Winners Club 777", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a9e0fca0.jpg?v=0c91e9dc", gameUrl: "https://www.winnersclub777.com/" },
-      { id: "legendfire", name: "Legend Fire", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/8b67f370.jpg?v=0c91e9dc", gameUrl: "https://www.legendfire.xyz/" },
-      { id: "firelinkplus", name: "Fire Link Plus", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/f592d30c.jpg?v=0c91e9dc", gameUrl: "https://firelinkplus.com/" },
-      { id: "blackmamba", name: "Black Mamba", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/b99b4435.jpg?v=0c91e9dc", gameUrl: "https://blackmamba.mobi/" },
-      { id: "playorca", name: "Play Orca", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a281d47e.jpg?v=0c91e9dc", gameUrl: "https://playorca.mobi/" },
-      { id: "playbdd", name: "Play BDD", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/fcf9c9dd.jpg?v=0c91e9dc", gameUrl: "https://www.playbdd.com/" },
-      { id: "kraken", name: "The Kraken", imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/f6ee4ae8.jpg?v=0c91e9dc", gameUrl: "https://getthekraken.com/" }
+      {
+        id: "megaspinsweeps",
+        name: "Mega Spin Sweeps",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/85307f95.jpg?v=0c91e9dc",
+        gameUrl: "http://www.megaspinsweeps.com/index.html"
+      },
+      {
+        id: "vblink777",
+        name: "VBLink777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/753a32c3.jpg?v=0c91e9dc",
+        gameUrl: "https://www.vblink777.club/"
+      },
+      {
+        id: "goldentreasure",
+        name: "Golden Treasure",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/7c9b03e5.jpg?v=0c91e9dc",
+        gameUrl: "https://www.goldentreasure.mobi/"
+      },
+      {
+        id: "orionstars",
+        name: "Orion Stars",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/417aedb1.png?v=0c91e9dc",
+        gameUrl: "http://start.orionstars.vip:8580/index.html"
+      },
+      {
+        id: "firekirin",
+        name: "Fire Kirin",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/189aadee.jpg?v=0c91e9dc",
+        gameUrl: "http://start.firekirin.xyz:8580/index.html"
+      },
+      {
+        id: "rivermonster",
+        name: "River Monster",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/253c9f08.jpg?v=0c91e9dc",
+        gameUrl: "https://rm777.net/"
+      },
+      {
+        id: "riversweeps",
+        name: "Riversweeps",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/597c1510.jpg?v=0c91e9dc",
+        gameUrl: "https://bet777.eu/"
+      },
+      {
+        id: "fortune2go",
+        name: "Fortune 2 Go",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/d1498abc.jpg?v=0c91e9dc",
+        gameUrl: "https://www.fortune2go20.com/mobile/Login/index.html"
+      },
+      {
+        id: "goldendragon",
+        name: "Golden Dragon",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/de5f04bc.jpg?v=0c91e9dc",
+        gameUrl: "https://playgd.mobi/SSLobby/3733.0/web-mobile/index.html"
+      },
+      {
+        id: "bludragon",
+        name: "Blu Dragon",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/faeeb77b.png?v=0c91e9dc",
+        gameUrl: "http://app.bluedragon777.com/"
+      },
+      {
+        id: "vegasx",
+        name: "VEGAS X",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/1e472144.jpg?v=0c91e9dc",
+        gameUrl: "https://vegas-x.org/"
+      },
+      {
+        id: "ultrapanda",
+        name: "ULTRAPANDA",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/ad5dd9c6.jpg?v=0c91e9dc",
+        gameUrl: "https://www.ultrapanda.mobi/"
+      },
+      {
+        id: "milkyways",
+        name: "MILKY WAYS",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/2bc0a981.jpg?v=0c91e9dc",
+        gameUrl: "https://milkywayapp.xyz/"
+      },
+      {
+        id: "luckypenny",
+        name: "LUCKY PENNY",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/9b984f9c.jpg?v=0c91e9dc",
+        gameUrl: "http://luckypenny.xyz:8580/index.html"
+      },
+      {
+        id: "gametime",
+        name: "Gametime",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/85307f95.jpg?v=0c91e9dc",
+        gameUrl: "http://game-time.vip:8580/index.html"
+      },
+      {
+        id: "goldstar",
+        name: "Gold Star",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/74eb627d.jpg?v=0c91e9dc",
+        gameUrl: "https://goldstar.games/"
+      },
+      {
+        id: "100plus",
+        name: "100 Plus",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/e00a2881.jpg?v=0c91e9dc",
+        gameUrl: "https://99.100plus.me/lobby/1684487595/index.html?agreement=1&/player/release/"
+      },
+      {
+        id: "gamevault",
+        name: "Gamevault",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/050dac4a.jpg?v=0c91e9dc",
+        gameUrl: "https://download.gamevault999.com/"
+      },
+      {
+        id: "galaxyworld",
+        name: "Galaxy World",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/1f44c7e1.png?v=0c91e9dc",
+        gameUrl: "https://m.galaxyworld999.com/"
+      },
+      {
+        id: "magiccity",
+        name: "Magic City",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/71d5fc8f.jpg?v=0c91e9dc",
+        gameUrl: "https://www.magiccity777.com/SSLobby/3657.0/web-mobile/index.html"
+      },
+      {
+        id: "highstake",
+        name: "High Stake Sweeps",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/e1d3a0f7.jpg?v=0c91e9dc",
+        gameUrl: "https://dl.highstakesweeps.com/"
+      },
+      {
+        id: "sincity",
+        name: "Sin City",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/98333b44.jpg?v=0c91e9dc",
+        gameUrl: "https://sincitysweeps.net/"
+      },
+      {
+        id: "vegassweeps",
+        name: "Vegas Sweeps",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/bd38d36f.jpg?v=0c91e9dc",
+        gameUrl: "https://m.lasvegassweeps.com/"
+      },
+      {
+        id: "ignite",
+        name: "IGNITE",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/3603f518.png?v=0c91e9dc",
+        gameUrl: "https://casinoignite.vip/"
+      },
+      {
+        id: "cashfrenzy",
+        name: "Cashapp Frenzy",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a67374ce.jpg?v=0c91e9dc",
+        gameUrl: "https://www.cashfrenzy777.com/"
+      },
+      {
+        id: "acebook",
+        name: "ACEBOOK",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/09e14951.jpg?v=0c91e9dc",
+        gameUrl: "https://www.playacebook.mobi/"
+      },
+      {
+        id: "bluedragon2",
+        name: "Blue Dragon 2",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/637eb5ee.png?v=0c91e9dc",
+        gameUrl: "http://app.getbluedragon.com/"
+      },
+      {
+        id: "juwa777",
+        name: "Juwa777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/bebb5d9e.jpg?v=0c91e9dc",
+        gameUrl: "https://dl.juwa777.com/"
+      },
+      {
+        id: "pandamaster",
+        name: "Panda Master",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/0b6843e0.jpg?v=0c91e9dc",
+        gameUrl: "https://pandamaster.vip:8888/index.html"
+      },
+      {
+        id: "fishglory",
+        name: "Fish Glory",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/346fd5a6.jpg?v=0c91e9dc",
+        gameUrl: "https://www.fishglory.games/"
+      },
+      {
+        id: "vegasroll",
+        name: "Vegas Roll",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/7867671f.jpg?v=0c91e9dc",
+        gameUrl: "http://www.vegas-roll.com/m"
+      },
+      {
+        id: "mrallinone",
+        name: "Mr All In One",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/d6f9845f.jpg?v=0c91e9dc",
+        gameUrl: "https://www.mrallinone777.com/m"
+      },
+      {
+        id: "orionpower",
+        name: "ORION Power",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/6c415d9a.jpg?v=0c91e9dc",
+        gameUrl: "http://product.orionpower.games/v1001/"
+      },
+      {
+        id: "quakegame",
+        name: "Quake Game",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/0c63b506.jpg?v=0c91e9dc",
+        gameUrl: "https://www.quakegame.net/"
+      },
+      {
+        id: "vegasluck777",
+        name: "Vegas Luck 777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/961ffa7e.jpg?v=0c91e9dc",
+        gameUrl: "https://start.vegasluck777.com/"
+      },
+      {
+        id: "noble777",
+        name: "Noble 777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/21cf31e9.jpg?v=0c91e9dc",
+        gameUrl: "https://www.noble777.com/m"
+      },
+      {
+        id: "cashmachine777",
+        name: "Cash Machine 777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/d68e85e8.jpg?v=0c91e9dc",
+        gameUrl: "https://www.cashmachine777.com/m"
+      },
+      {
+        id: "gameroom777",
+        name: "Game Room 777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/92bca02e.jpg?v=0c91e9dc",
+        gameUrl: "https://www.gameroom777.com/m"
+      },
+      {
+        id: "luckystars",
+        name: "Lucky Stars",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/990e95bf.jpg?v=0c91e9dc",
+        gameUrl: "http://www.luckystars.games/m"
+      },
+      {
+        id: "slots88888",
+        name: "Slots 88888",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/035f8253.jpg?v=0c91e9dc",
+        gameUrl: "https://www.slots88888.com/m"
+      },
+      {
+        id: "winstar99999",
+        name: "Win Star 99999",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/b48ed188.jpg?v=0c91e9dc",
+        gameUrl: "http://server.winstar99999.com:8009/m"
+      },
+      {
+        id: "mafia77777",
+        name: "Mafia 77777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a3830c1f.jpg?v=0c91e9dc",
+        gameUrl: "http://product.mafia77777.com/v1003/"
+      },
+      {
+        id: "yolo777",
+        name: "YOLO 777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/e1b31467.jpg?v=0c91e9dc",
+        gameUrl: "https://yolo777.game/"
+      },
+      {
+        id: "fpc",
+        name: "FPC Mobile",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/2eb63b4e.png?v=0c91e9dc",
+        gameUrl: "https://fpc-mob.com/AD/index.html"
+      },
+      {
+        id: "winnersclub777",
+        name: "Winners Club 777",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a9e0fca0.jpg?v=0c91e9dc",
+        gameUrl: "https://www.winnersclub777.com/"
+      },
+      {
+        id: "legendfire",
+        name: "Legend Fire",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/8b67f370.jpg?v=0c91e9dc",
+        gameUrl: "https://www.legendfire.xyz/"
+      },
+      {
+        id: "firelinkplus",
+        name: "Fire Link Plus",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/f592d30c.jpg?v=0c91e9dc",
+        gameUrl: "https://firelinkplus.com/"
+      },
+      {
+        id: "blackmamba",
+        name: "Black Mamba",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/b99b4435.jpg?v=0c91e9dc",
+        gameUrl: "https://blackmamba.mobi/"
+      },
+      {
+        id: "playorca",
+        name: "Play Orca",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/a281d47e.jpg?v=0c91e9dc",
+        gameUrl: "https://playorca.mobi/"
+      },
+      {
+        id: "playbdd",
+        name: "Play BDD",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/fcf9c9dd.jpg?v=0c91e9dc",
+        gameUrl: "https://www.playbdd.com/"
+      },
+      {
+        id: "kraken",
+        name: "The Kraken",
+        imageUrl: "https://shawn-sweepstakes.carrd.co/assets/images/gallery01/f6ee4ae8.jpg?v=0c91e9dc",
+        gameUrl: "https://getthekraken.com/"
+      }
     ];
 
-    // Initialize page when DOM loads
-    document.addEventListener("DOMContentLoaded", () => {
-      console.log('🚀 ShawnSweeps loading...');
-      
-      // Populate game grid
-      const gamesEl = document.getElementById("games");
-      games.forEach(g => {
-        const card = document.createElement("div");
-        card.className = "game-card";
-        card.innerHTML = `<a href="${g.gameUrl}" target="_blank"><img src="${g.imageUrl}" alt="${g.name}"></a>`;
-        gamesEl.appendChild(card);
-      });
+    // === Render Games ===
+    const gamesContainer = document.getElementById('games');
+    games.forEach(game => {
+      const card = document.createElement('div');
+      card.className = 'game-card';
+      card.innerHTML = `<a href="${game.gameUrl}" target="_blank"><img src="${game.imageUrl}" alt="${game.name}"></a>`;
+      gamesContainer.appendChild(card);
+    });
 
-      // Initialize Wert widget loading
-      initializeWertWidget();
-
-      // Wert.io Widget Integration with multi-wallet configuration
-      document.getElementById("openWidget").addEventListener("click", function () {
-        
-        // Check if widget is loaded
-        if (!wertWidgetLoaded) {
-          showStatus('Widget is still loading. Please wait...', 'info');
-          return;
-        }
-
-        if (typeof WertWidget === 'undefined') {
-          console.error('❌ WertWidget is not available');
-          showStatus('Widget not available. Please refresh the page and try again.', 'error', 5000);
-          return;
-        }
-
-        try {
-          console.log('🎯 Creating Wert widget with multi-wallet configuration...');
-          
-          const widgetConfig = {
-            partner_id: "01K0FHM9K6ATK1CYCHMV34Z0YG",
-            origin: "https://sandbox.wert.io",
-            
-            // Multi-wallet configuration - exactly as you provided
-            extra: {
-              wallets: [
-                {
-                  name: "TT",
-                  network: "amoy",
-                  address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
-                },
-                {
-                  name: "ETH",
-                  network: "sepolia",
-                  address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
-                }
-              ]
+    // === Handle Wert Widget Button ===
+    document.getElementById('wertButton').addEventListener('click', function() {
+      // Configuration for Wert widget
+      const wertConfig = {
+        partner_id: "01K0FHM9K6ATK1CYCHMV34Z0YG",
+        origin: "https://sandbox.wert.io",
+        extra: {
+          wallets: [
+            {
+              name: "TT",
+              network: "amoy",
+              address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
             },
-            
-            // Optional settings
-            commodity_amount: 0.01, // Minimum amount for testing
-            
-            // UI customization
-            color_background: "#1a1a1a",
-            color_buttons: "#ff6b6b",
-            color_buttons_text: "#ffffff",
-            color_main_text: "#ffffff",
-            color_secondary_text: "#cccccc",
-            
-            // Event listeners for monitoring
-            listeners: {
-              loaded: () => {
-                console.log('✅ Wert widget UI loaded successfully');
-                showStatus('Deposit widget opened successfully!', 'success');
-              },
-              close: () => {
-                console.log('ℹ️ Wert widget closed by user');
-              },
-              error: (error) => {
-                console.error('❌ Wert widget runtime error:', error);
-                showStatus('Widget error occurred. Please try again.', 'error');
-              },
-              position: (position) => {
-                console.log('📍 Widget position updated:', position);
-              },
-              'payment-status': (data) => {
-                console.log('💳 Payment status update:', data);
-                if (data.status === 'success') {
-                  showStatus('Payment completed successfully!', 'success', 5000);
-                } else if (data.status === 'pending') {
-                  showStatus('Payment is being processed...', 'info', 3000);
-                } else if (data.status === 'failed') {
-                  showStatus('Payment failed. Please try again.', 'error', 5000);
-                }
-              }
+            {
+              name: "ETH",
+              network: "sepolia",
+              address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
             }
-          };
-
-          console.log('🔧 Widget configuration:', widgetConfig);
-
-          // Create and mount widget
-          const wertWidget = new WertWidget(widgetConfig);
-          
-          console.log('🚀 Mounting Wert widget...');
-          wertWidget.mount();
-          
-        } catch (error) {
-          console.error("❌ Error initializing Wert widget:", error);
-          console.error("📊 Error details:", {
-            message: error.message,
-            stack: error.stack,
-            wertWidgetType: typeof WertWidget,
-            wertWidgetLoaded: wertWidgetLoaded
-          });
-          
-          // User-friendly error messages
-          let userMessage = 'Unable to open deposit widget.';
-          
-          if (error.message.includes('partner_id')) {
-            userMessage = 'Invalid partner configuration. Please contact support.';
-          } else if (error.message.includes('network') || error.message.includes('address')) {
-            userMessage = 'Invalid wallet configuration. Please contact support.';
-          } else if (error.message.includes('WertWidget')) {
-            userMessage = 'Widget library error. Please refresh the page and try again.';
-          }
-          
-          showStatus(userMessage, 'error', 5000);
+          ]
         }
+      };
+
+      // Convert config to URL parameters
+      const params = new URLSearchParams();
+      params.append('partner_id', wertConfig.partner_id);
+      params.append('origin', wertConfig.origin);
+      
+      // Add wallet configurations
+      wertConfig.extra.wallets.forEach((wallet, index) => {
+        params.append(`extra[wallets][${index}][name]`, wallet.name);
+        params.append(`extra[wallets][${index}][network]`, wallet.network);
+        params.append(`extra[wallets][${index}][address]`, wallet.address);
       });
 
-      console.log('✅ ShawnSweeps initialized successfully');
-    });
+      // Construct the full URL
+      const wertUrl = `${wertConfig.origin}/widget?${params.toString()}`;
+      
+      // Open Wert widget in a new window/tab
+      const wertWindow = window.open(
+        wertUrl,
+        'wert-widget',
+        'width=400,height=600,scrollbars=yes,resizable=yes'
+      );
 
-    // Global error handler
-    window.addEventListener('error', (event) => {
-      if (event.filename && event.filename.includes('wert')) {
-        console.error('🚨 Wert-related JavaScript error:', event.error);
-      }
-    });
-
-    // Handle unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      if (event.reason && event.reason.toString().includes('wert')) {
-        console.error('🚨 Wert-related promise rejection:', event.reason);
+      // Focus the new window
+      if (wertWindow) {
+        wertWindow.focus();
+      } else {
+        // Fallback if popup is blocked
+        alert('Please allow popups for this site to use the Wert widget, or click the button again.');
       }
     });
   </script>
-
 </body>
-
 </html>
