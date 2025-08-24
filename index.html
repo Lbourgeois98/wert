@@ -627,29 +627,24 @@
         params.append(`extra[wallets][${index}][address]`, wallet.address);
       });
 
-     <script type="module">
-  import WertWidget from "https://cdn.jsdelivr.net/npm/@wert-io/widget-initializer/+esm";
+      // Construct the full URL
+      const wertUrl = `${wertConfig.origin}/widget?${params.toString()}`;
+      
+      // Open Wert widget in a new window/tab
+      const wertWindow = window.open(
+        wertUrl,
+        'wert-widget',
+        'width=400,height=600,scrollbars=yes,resizable=yes'
+      );
 
-  document.getElementById("wertButton").addEventListener("click", async function () {
-    try {
-      // Call Vercel API to get signed params
-      const res = await fetch("/api/wert-params");
-      const signedParams = await res.json();
-
-      // Open Wert widget in popup
-      const wertWidget = new WertWidget({
-        ...signedParams,
-        origin: "https://widget.wert.io",
-        width: 400,
-        height: 600,
-      });
-
-      wertWidget.open();
-    } catch (err) {
-      console.error("Error loading Wert widget:", err);
-      alert("Could not load Wert widget. Check console.");
-    }
-  });
+      // Focus the new window
+      if (wertWindow) {
+        wertWindow.focus();
+      } else {
+        // Fallback if popup is blocked
+        alert('Please allow popups for this site to use the Wert widget, or click the button again.');
+      }
+    });
   </script>
 </body>
 </html>
