@@ -602,22 +602,19 @@
     document.getElementById('wertButton').addEventListener('click', function() {
       // Configuration for Wert widget
       const wertConfig = {
-        partner_id: "01K0FHM9K6ATK1CYCHMV34Z0YG",
-        origin: "https://sandbox.wert.io",
-        extra: {
-          wallets: [
-            {
-              name: "TT",
-              network: "amoy",
-              address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
-            },
-            {
-              name: "ETH",
-              network: "sepolia",
-              address: "0x0118E8e2FCb391bCeb110F62b5B7B963477C1E0d"
-            }
-          ]
-        }
+        {
+  "partner_id": "01K1T8VJJ8TY67M49FDXY865GF",
+  "origin": "https://widget.wert.io",
+  "extra": {
+    "wallets": [
+      {
+        "name": "BTC",
+        "network": "Bitcoin",
+        "address": "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"
+      }
+    ]
+  }
+}
       };
 
       // Convert config to URL parameters
