@@ -599,51 +599,34 @@
       gamesContainer.appendChild(card);
     });
 
-    // === Handle Wert Widget Button ===
-    document.getElementById('wertButton').addEventListener('click', function() {
-      // Configuration for Wert widget
-      const wertConfig = {
-        partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
-        origin: "https://widget.wert.io",
-        extra: {
-          wallets: [
-            {
-              name: "BTC",
-              network: "bitcoin",
-              address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"
-            }
-          ]
-        }
-      };
+  <script>
+    document.getElementById('wertButton').addEventListener('click', async function() {
+      try {
+        // Call your serverless API
+        const res = await fetch("/api/create-wert-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv", // BTC address
+            commodity: "BTC",
+            network: "bitcoin",
+            commodity_amount: "0.01"
+          })
+        });
 
-      // Convert config to URL parameters
-      const params = new URLSearchParams();
-      params.append('partner_id', wertConfig.partner_id);
-      params.append('origin', wertConfig.origin);
-      
-      // Add wallet configurations
-      wertConfig.extra.wallets.forEach((wallet, index) => {
-        params.append(`extra[wallets][${index}][name]`, wallet.name);
-        params.append(`extra[wallets][${index}][network]`, wallet.network);
-        params.append(`extra[wallets][${index}][address]`, wallet.address);
-      });
+        const { session_id } = await res.json();
 
-      // Construct the full URL
-      const wertUrl = `${wertConfig.origin}/widget?${params.toString()}`;
-      
-      // Open Wert widget in a new window/tab
-      const wertWindow = window.open(
-        wertUrl,
-        'wert-widget',
-        'width=400,height=600,scrollbars=yes,resizable=yes'
-      );
+        // Initialize Wert widget
+        const wertWidget = new WertWidget({
+          partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
+          origin: "https://widget.wert.io",
+          session_id
+        });
 
-      // Focus the new window
-      if (wertWindow) {
-        wertWindow.focus();
-      } else {
-        // Fallback if popup is blocked
-        alert('Please allow popups for this site to use the Wert widget, or click the button again.');
+        wertWidget.open();
+      } catch (err) {
+        console.error("Failed to open Wert widget:", err);
+        alert("Could not start Wert session. Please try again.");
       }
     });
   </script>
