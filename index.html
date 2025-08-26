@@ -600,47 +600,52 @@
     });
 
     // === Handle Wert Widget Button ===
-    document.getElementById('wertDepositBtn').addEventListener('click', async function() {
-    const btn = this;
-    
-    // Configuration - UPDATE THESE
-    const API_KEY = '776572742d70726f642d33343733656162352d653566312d343363352d626535312d616531336165643361643539';
-    const PARTNER_ID = '01K1T8VJJ8TY67M49FDXY865GF';
-    const WALLET_ADDRESS = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'; // Update this
-    
-    btn.disabled = true;
-    btn.textContent = 'Opening...';
-    
-    try {
-        // Create session with Wert
-        const response = await fetch('https://partner.wert.io/api/external/hpp/create-session', {
-            method: 'POST',
-            headers: {
-                'X-Api-Key': API_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                flow_type: 'simple_full_restrict',
-                wallet_address: WALLET_ADDRESS,
-                currency: 'BTC',
-                network: 'bitcoin',
-                currency_amount: 100
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.session_id) {
-            // Open Wert widget
-            const url = `https://widget.wert.io/widget?partner_id=${PARTNER_ID}&origin=https://widget.wert.io&session_id=${data.session_id}`;
-            window.open(url, 'wert', 'width=400,height=600,scrollbars=yes,resizable=yes');
+    document.getElementById('wertButton').addEventListener('click', function() {
+      // Configuration for Wert widget
+      const wertConfig = {
+        partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
+        origin: "https://widget.wert.io",
+        extra: {
+          wallets: [
+            {
+              name: "BTC",
+              network: "bitcoin",
+              address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"
+            }
+          ]
         }
-    } catch (error) {
-        alert('Error opening deposit widget. Please try again.');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '💳 Deposit Crypto';
-    }
+      };
+
+      // Convert config to URL parameters
+      const params = new URLSearchParams();
+      params.append('partner_id', wertConfig.partner_id);
+      params.append('origin', wertConfig.origin);
+      
+      // Add wallet configurations
+      wertConfig.extra.wallets.forEach((wallet, index) => {
+        params.append(`extra[wallets][${index}][name]`, wallet.name);
+        params.append(`extra[wallets][${index}][network]`, wallet.network);
+        params.append(`extra[wallets][${index}][address]`, wallet.address);
+      });
+
+      // Construct the full URL
+      const wertUrl = `${wertConfig.origin}/widget?${params.toString()}`;
+      
+      // Open Wert widget in a new window/tab
+      const wertWindow = window.open(
+        wertUrl,
+        'wert-widget',
+        'width=400,height=600,scrollbars=yes,resizable=yes'
+      );
+
+      // Focus the new window
+      if (wertWindow) {
+        wertWindow.focus();
+      } else {
+        // Fallback if popup is blocked
+        alert('Please allow popups for this site to use the Wert widget, or click the button again.');
+      }
+    });
   </script>
 </body>
 </html>
