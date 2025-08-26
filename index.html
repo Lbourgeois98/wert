@@ -264,7 +264,42 @@
   <!-- Header -->
   <header>
     <img src="https://shawn-sweepstakes.carrd.co/assets/images/image03.png?v=0c91e9dc" alt="ShawnSweeps Logo">
-    <script src="https://widget.wert.io/wert-iframe.js"></script>
+     <script src="https://widget.wert.io/wert-5.0.0.js"></script>
+</head>
+<body>
+  <button class="wert-button" id="wertButton">Deposit</button>
+
+  <script>
+    document.getElementById('wertButton').addEventListener('click', async function() {
+      try {
+        // Call your serverless API
+        const res = await fetch("/api/create-wert-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv", // BTC address
+            commodity: "BTC",
+            network: "bitcoin",
+            commodity_amount: "0.01"
+          })
+        });
+
+        const { session_id } = await res.json();
+
+        // Initialize Wert widget
+        const wertWidget = new WertWidget({
+          partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
+          origin: "https://widget.wert.io",
+          session_id
+        });
+
+        wertWidget.open();
+      } catch (err) {
+        console.error("Failed to open Wert widget:", err);
+        alert("Could not start Wert session. Please try again.");
+      }
+    });
+  </script>
   </header>
 
   <!-- Deposit Buttons -->
@@ -598,37 +633,5 @@
       card.innerHTML = `<a href="${game.gameUrl}" target="_blank"><img src="${game.imageUrl}" alt="${game.name}"></a>`;
       gamesContainer.appendChild(card);
     });
-
-  <script>
-    document.getElementById('wertButton').addEventListener('click', async function() {
-      try {
-        // Call your serverless API
-        const res = await fetch("/api/create-wert-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv", // BTC address
-            commodity: "BTC",
-            network: "bitcoin",
-            commodity_amount: "0.01"
-          })
-        });
-
-        const { session_id } = await res.json();
-
-        // Initialize Wert widget
-        const wertWidget = new WertWidget({
-          partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
-          origin: "https://widget.wert.io",
-          session_id
-        });
-
-        wertWidget.open();
-      } catch (err) {
-        console.error("Failed to open Wert widget:", err);
-        alert("Could not start Wert session. Please try again.");
-      }
-    });
   </script>
-</body>
-</html>
+  </html>
