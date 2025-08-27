@@ -1,13 +1,32 @@
 {
+  "functions": {
+    "api/create-wert-session.js": {
+      "runtime": "@vercel/node@18.x"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://widget.wert.io; connect-src 'self' https://*.wert.io; frame-src https://*.wert.io; img-src 'self' data: https:; style-src 'self' 'unsafe-inline';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.wert.io https://partner.wert.io https://partner-sandbox.wert.io https://unpkg.com; frame-src 'self' https://*.wert.io https://wert.io https://sandbox.wert.io; img-src 'self' data: https: http:; style-src 'self' 'unsafe-inline'; font-src 'self' https: data:; media-src 'self' https: data:; object-src 'none'; base-uri 'self';"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
     }
   ]
 }
