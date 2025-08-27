@@ -1,0 +1,13 @@
+{
+  "name": "shawnsweeps-app",
+  "version": "1.0.0",
+  "description": "ShawnSweeps gaming platform with Wert integration",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build complete'",
+    "start": "vercel dev"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
