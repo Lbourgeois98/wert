@@ -1,0 +1,13 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://widget.wert.io; connect-src 'self' https://*.wert.io; frame-src https://*.wert.io; img-src 'self' data: https:; style-src 'self' 'unsafe-inline';"
+        }
+      ]
+    }
+  ]
+}
