@@ -1,1 +1,253 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wert Integration - Vercel App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .wert-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .wert-button:hover {
+            background: #0056b3;
+        }
+        .wert-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #dc3545;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 5px;
+        }
+        .loading {
+            color: #007bff;
+            margin: 10px 0;
+        }
+        .config-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .config-section h3 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wert Cryptocurrency Purchase</h1>
+        
+        <div class="config-section">
+            <h3>Purchase Configuration</h3>
+            <div class="form-group">
+                <label for="walletAddress">Bitcoin Wallet Address:</label>
+                <input type="text" id="walletAddress" value="39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv" placeholder="Enter BTC wallet address">
+            </div>
+            <div class="form-group">
+                <label for="currencyAmount">Amount (USD):</label>
+                <input type="number" id="currencyAmount" value="100" placeholder="Enter amount in USD">
+            </div>
+            <div class="form-group">
+                <label for="userPhone">Phone (optional):</label>
+                <input type="tel" id="userPhone" placeholder="+1234567890">
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="loadingMessage" class="loading" style="display: none;">Creating payment session...</div>
+        
+        <button id="wertButton" class="wert-button">Buy Bitcoin with Wert</button>
+        
+        <div style="margin-top: 20px;">
+            <h3>Setup Instructions:</h3>
+            <ol>
+                <li>Create a Vercel serverless function for the API calls</li>
+                <li>Add your Wert API key to Vercel environment variables</li>
+                <li>Deploy and test</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Include Wert Widget SDK -->
+    <script src="https://unpkg.com/@wert-io/widget-initializer@latest/dist/index.js"></script>
+    
+    <script>
+        // Your Wert Partner ID - replace with your actual partner ID
+        const PARTNER_ID = "01K1T8VJJ8TY67M49FDXY865GF";
+        const IS_SANDBOX = true; // Set to false for production
+        
+        class WertIntegration {
+            constructor() {
+                this.button = document.getElementById('wertButton');
+                this.errorDiv = document.getElementById('errorMessage');
+                this.loadingDiv = document.getElementById('loadingMessage');
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                this.button.addEventListener('click', () => this.handlePurchase());
+            }
+            
+            showError(message) {
+                this.errorDiv.textContent = message;
+                this.errorDiv.style.display = 'block';
+                this.hideLoading();
+            }
+            
+            hideError() {
+                this.errorDiv.style.display = 'none';
+            }
+            
+            showLoading() {
+                this.loadingDiv.style.display = 'block';
+                this.button.disabled = true;
+            }
+            
+            hideLoading() {
+                this.loadingDiv.style.display = 'none';
+                this.button.disabled = false;
+            }
+            
+            async handlePurchase() {
+                this.hideError();
+                this.showLoading();
+                
+                try {
+                    // Get form values
+                    const walletAddress = document.getElementById('walletAddress').value.trim();
+                    const currencyAmount = document.getElementById('currencyAmount').value;
+                    const userPhone = document.getElementById('userPhone').value.trim();
+                    
+                    // Validate inputs
+                    if (!walletAddress) {
+                        throw new Error('Please enter a valid Bitcoin wallet address');
+                    }
+                    
+                    if (!currencyAmount || currencyAmount < 10) {
+                        throw new Error('Minimum purchase amount is $10');
+                    }
+                    
+                    // Create session via your Vercel API endpoint
+                    const session = await this.createSession({
+                        walletAddress,
+                        currencyAmount: parseFloat(currencyAmount),
+                        userPhone
+                    });
+                    
+                    // Initialize Wert widget with session
+                    await this.initializeWidget(session.session_id);
+                    
+                } catch (error) {
+                    console.error('Wert integration error:', error);
+                    this.showError(error.message || 'Failed to initialize payment. Please try again.');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+            
+            async createSession(config) {
+                const sessionData = {
+                    flow_type: "simple_full_restrict",
+                    wallet_address: config.walletAddress,
+                    currency: "USD",
+                    commodity: "BTC",
+                    network: "bitcoin",
+                    currency_amount: config.currencyAmount
+                };
+                
+                // Add phone if provided
+                if (config.userPhone) {
+                    sessionData.phone = config.userPhone;
+                }
+                
+                // Call your Vercel API endpoint
+                const response = await fetch('/api/create-wert-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sessionData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create payment session');
+                }
+                
+                return await response.json();
+            }
+            
+            async initializeWidget(sessionId) {
+                try {
+                    const options = {
+                        partner_id: PARTNER_ID,
+                        session_id: sessionId,
+                        origin: IS_SANDBOX ? 'https://sandbox.wert.io' : undefined,
+                        theme: 'dark',
+                        listeners: {
+                            loaded: () => console.log('Widget loaded'),
+                            close: () => console.log('Widget closed'),
+                            error: (error) => console.error('Widget error:', error),
+                            'payment-status': (data) => {
+                                console.log('Payment status:', data);
+                                // Handle payment status updates
+                            }
+                        }
+                    };
+                    
+                    const wertWidget = new WertWidget(options);
+                    wertWidget.open();
+                    
+                } catch (error) {
+                    throw new Error('Failed to initialize payment widget: ' + error.message);
+                }
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WertIntegration();
+        });
+    </script>
+</body>
+</html>
