@@ -93,6 +93,13 @@
       transform: translateY(0);
     }
 
+    .wert-button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     /* === Button Divider === */
     .button-divider {
       display: flex;
@@ -170,77 +177,42 @@
       box-shadow: 0 0 25px rgba(250, 10, 10, 0.6);
     }
 
-    /* === Modal === */
-    #depositModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.95);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: #111;
-      padding: 30px;
-      border-radius: 14px;
-      width: 90%;
-      max-width: 500px;
-      color: white;
-      border: 1px solid #fa0a0a;
-      box-shadow: 0 0 30px rgba(250, 10, 10, 0.3);
-      position: relative;
-    }
-    .close-btn {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 24px;
-      color: #ccc;
-      cursor: pointer;
-    }
-    .close-btn:hover {
-      color: white;
-    }
-    h2 {
-      margin-bottom: 20px;
-      font-size: 22px;
-      color: #fa0a0a;
+    /* === Status Messages === */
+    .error {
+      color: #ff6b6b;
+      margin: 10px auto;
+      padding: 10px 15px;
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 5px;
+      max-width: 400px;
       text-align: center;
-    }
-    label {
-      display: block;
-      text-align: left;
-      margin: 15px 0 5px;
-      font-weight: bold;
-      color: #ddd;
-    }
-    input, select {
-      width: 100%;
-      padding: 10px;
-      background: #222;
-      border: 1px solid #444;
-      color: white;
-      border-radius: 6px;
       font-size: 14px;
     }
-    button[type="submit"] {
-      margin-top: 20px;
-      padding: 14px;
-      background: #fa0a0a;
-      color: white;
-      border: none;
-      width: 100%;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
+    .success {
+      color: #51cf66;
+      margin: 10px auto;
+      padding: 10px 15px;
+      background: rgba(81, 207, 102, 0.1);
+      border: 1px solid rgba(81, 207, 102, 0.3);
+      border-radius: 5px;
+      max-width: 400px;
+      text-align: center;
+      font-size: 14px;
     }
-    button[type="submit"]:hover {
-      background: #e00909;
+    .loading {
+      color: #74c0fc;
+      margin: 10px auto;
+      padding: 10px 15px;
+      background: rgba(116, 192, 252, 0.1);
+      border: 1px solid rgba(116, 192, 252, 0.3);
+      border-radius: 5px;
+      max-width: 400px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .hidden {
+      display: none;
     }
   </style>
   <script src="https://widget.wert.io/wert-iframe.js"></script>
@@ -265,13 +237,17 @@
   <!-- Header -->
   <header>
     <img src="https://shawn-sweepstakes.carrd.co/assets/images/image03.png?v=0c91e9dc" alt="ShawnSweeps Logo">
-    
   </header>
+
+  <!-- Status Messages -->
+  <div id="errorMessage" class="error hidden"></div>
+  <div id="successMessage" class="success hidden"></div>
+  <div id="loadingMessage" class="loading hidden">Creating payment session...</div>
 
   <!-- Deposit Buttons -->
   <div class="deposit-buttons">
     <button class="wert-button" id="wertButton">
-      Deposit
+      Buy Bitcoin - Deposit Funds
     </button>
   </div>
 
@@ -281,7 +257,154 @@
   </section>
 
   <script>
-    // === Your Games Data (from your file) ===
+    // === Wert Configuration ===
+    const PARTNER_ID = "01K1T8VJJ8TY67M49FDXY865GF";
+    const IS_SANDBOX = true; // Set to false for production
+    const DEFAULT_WALLET_ADDRESS = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv";
+
+    // === UI Elements ===
+    const wertButton = document.getElementById('wertButton');
+    const errorDiv = document.getElementById('errorMessage');
+    const successDiv = document.getElementById('successMessage');
+    const loadingDiv = document.getElementById('loadingMessage');
+
+    // === Status Message Functions ===
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.classList.remove('hidden');
+      hideSuccess();
+      hideLoading();
+    }
+
+    function showSuccess(message) {
+      successDiv.textContent = message;
+      successDiv.classList.remove('hidden');
+      hideError();
+      hideLoading();
+    }
+
+    function hideError() {
+      errorDiv.classList.add('hidden');
+    }
+
+    function hideSuccess() {
+      successDiv.classList.add('hidden');
+    }
+
+    function showLoading() {
+      loadingDiv.classList.remove('hidden');
+      wertButton.disabled = true;
+    }
+
+    function hideLoading() {
+      loadingDiv.classList.add('hidden');
+      wertButton.disabled = false;
+    }
+
+    // === Create Wert Session ===
+    async function createWertSession(config) {
+      const sessionData = {
+        flow_type: "simple_full_restrict",
+        wallet_address: config.walletAddress,
+        currency: "USD",
+        commodity: "BTC",
+        network: "bitcoin",
+        currency_amount: config.currencyAmount || 100
+      };
+
+      // For demo purposes, we'll create the widget URL directly
+      // In production, you'd call your API endpoint like this:
+      /*
+      const response = await fetch('/api/create-wert-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create payment session');
+      }
+
+      return await response.json();
+      */
+
+      // For now, we'll use direct widget integration
+      return { success: true };
+    }
+
+    // === Open Wert Widget ===
+    function openWertWidget() {
+      // Direct widget integration without session (simpler approach)
+      const baseUrl = IS_SANDBOX ? 'https://sandbox.wert.io' : 'https://wert.io';
+      const params = new URLSearchParams({
+        partner_id: PARTNER_ID,
+        click_id: `shawnsweeps_${Date.now()}`, // Unique identifier for tracking
+        origin: window.location.origin,
+        'extra[wallets][0][name]': 'BTC',
+        'extra[wallets][0][network]': 'bitcoin',
+        'extra[wallets][0][address]': DEFAULT_WALLET_ADDRESS
+      });
+
+      const widgetUrl = `${baseUrl}/widget?${params.toString()}`;
+      
+      // Open in popup window
+      const popup = window.open(
+        widgetUrl,
+        'wert-widget',
+        'width=460,height=700,scrollbars=yes,resizable=yes,location=no,status=no,menubar=no,toolbar=no'
+      );
+
+      // Check if popup was blocked
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        throw new Error('Popup blocked! Please allow popups for this site and try again.');
+      }
+
+      // Monitor popup
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          console.log('Wert widget closed');
+          showSuccess('Payment widget was closed. Check your wallet for any transactions.');
+        }
+      }, 1000);
+
+      return popup;
+    }
+
+    // === Handle Deposit Button Click ===
+    async function handleWertDeposit() {
+      hideError();
+      hideSuccess();
+      showLoading();
+
+      try {
+        // For production with your API, use this:
+        /*
+        const session = await createWertSession({
+          walletAddress: DEFAULT_WALLET_ADDRESS,
+          currencyAmount: 100
+        });
+        */
+
+        // Open widget
+        openWertWidget();
+        showSuccess('Payment widget opened successfully!');
+
+      } catch (error) {
+        console.error('Wert integration error:', error);
+        showError(error.message || 'Failed to initialize payment. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // === Event Listeners ===
+    wertButton.addEventListener('click', handleWertDeposit);
+
+    // === Your Games Data ===
     const games = [
       {
         id: "megaspinsweeps",
@@ -598,54 +721,6 @@
       card.className = 'game-card';
       card.innerHTML = `<a href="${game.gameUrl}" target="_blank"><img src="${game.imageUrl}" alt="${game.name}"></a>`;
       gamesContainer.appendChild(card);
-    });
-
-    // === Handle Wert Widget Button ===
-    document.getElementById('wertButton').addEventListener('click', function() {
-      // Configuration for Wert widget
-      const wertConfig = {
-        partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
-        origin: "https://widget.wert.io",
-        extra: {
-          wallets: [
-            {
-              name: "BTC",
-              network: "bitcoin",
-              address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"
-            }
-          ]
-        }
-      };
-
-      // Convert config to URL parameters
-      const params = new URLSearchParams();
-      params.append('partner_id', wertConfig.partner_id);
-      params.append('origin', wertConfig.origin);
-      
-      // Add wallet configurations
-      wertConfig.extra.wallets.forEach((wallet, index) => {
-        params.append(`extra[wallets][${index}][name]`, wallet.name);
-        params.append(`extra[wallets][${index}][network]`, wallet.network);
-        params.append(`extra[wallets][${index}][address]`, wallet.address);
-      });
-
-      // Construct the full URL
-      const wertUrl = `${wertConfig.origin}/widget?${params.toString()}`;
-      
-      // Open Wert widget in a new window/tab
-      const wertWindow = window.open(
-        wertUrl,
-        'wert-widget',
-        'width=400,height=600,scrollbars=yes,resizable=yes'
-      );
-
-      // Focus the new window
-      if (wertWindow) {
-        wertWindow.focus();
-      } else {
-        // Fallback if popup is blocked
-        alert('Please allow popups for this site to use the Wert widget, or click the button again.');
-      }
     });
   </script>
 </body>
