@@ -599,50 +599,53 @@
       gamesContainer.appendChild(card);
     });
 
- <head>
-  <meta charset="UTF-8">
-  <title>Deposit with Wert</title>
-  <script type="module">
-    import WertWidget from 'https://cdn.jsdelivr.net/npm/@wert-io/widget-initializer/+esm';
-
-    async function openDeposit() {
-      try {
-        // 1. Call backend function
-        const res = await fetch('/api/create-session', { method: 'POST' });
-        const data = await res.json();
-
-        if (!data.session_id) {
-          alert("Error: No session ID received");
-          return;
+    // === Handle Wert Widget Button ===
+    document.getElementById('wertButton').addEventListener('click', function() {
+      // Configuration for Wert widget
+      const wertConfig = {
+        partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
+        origin: "https://widget.wert.io",
+        extra: {
+          wallets: [
+            {
+              name: "BTC",
+              network: "bitcoin",
+              address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"
+            }
+          ]
         }
+      };
 
-        // 2. Initialize Wert Widget
-        const options = {
-          partner_id: '01K1T8VJJ8TY67M49FDXY865GF', // your Wert partner ID
-          session_id: data.session_id,
-          origin: 'https://widget.wert.io'
-        };
+      // Convert config to URL parameters
+      const params = new URLSearchParams();
+      params.append('partner_id', wertConfig.partner_id);
+      params.append('origin', wertConfig.origin);
+      
+      // Add wallet configurations
+      wertConfig.extra.wallets.forEach((wallet, index) => {
+        params.append(`extra[wallets][${index}][name]`, wallet.name);
+        params.append(`extra[wallets][${index}][network]`, wallet.network);
+        params.append(`extra[wallets][${index}][address]`, wallet.address);
+      });
 
-        const wertWidget = new WertWidget(options);
+      // Construct the full URL
+      const wertUrl = `${wertConfig.origin}/widget?${params.toString()}`;
+      
+      // Open Wert widget in a new window/tab
+      const wertWindow = window.open(
+        wertUrl,
+        'wert-widget',
+        'width=400,height=600,scrollbars=yes,resizable=yes'
+      );
 
-        // 3. Open widget
-        wertWidget.open();
-      } catch (err) {
-        console.error("Failed to open Wert widget:", err);
-        alert("Something went wrong. Check console.");
+      // Focus the new window
+      if (wertWindow) {
+        wertWindow.focus();
+      } else {
+        // Fallback if popup is blocked
+        alert('Please allow popups for this site to use the Wert widget, or click the button again.');
       }
-    }
-
-    window.openDeposit = openDeposit;
-  </script>
-</head>
-<body style="font-family: sans-serif; text-align: center; padding: 50px;">
-  <h1>Deposit Page</h1>
-  <button onclick="openDeposit()" 
-          style="padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; background: #4CAF50; color: white; border: none;">
-    Deposit
-  </button>
-</body>
+    });
   </script>
 </body>
 </html>
