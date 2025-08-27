@@ -1,6 +1,5 @@
-
 // File: /api/create-wert-session.js
-// This file should be placed in the /api directory of your Vercel project
+// Production-ready Wert API handler for Vercel
 
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -52,10 +51,8 @@ export default async function handler(req, res) {
       sessionData.phone = phone;
     }
 
-    // Determine API endpoint (sandbox vs production)
-    const API_BASE_URL = process.env.NODE_ENV === 'production' 
-      ? 'https://partner.wert.io' 
-      : 'https://partner-sandbox.wert.io';
+    // Use production API endpoint
+    const API_BASE_URL = 'https://partner.wert.io';
 
     // Make request to Wert API
     const wertResponse = await fetch(`${API_BASE_URL}/api/external/hpp/create-session`, {
@@ -82,7 +79,7 @@ export default async function handler(req, res) {
 
       return res.status(wertResponse.status).json({ 
         message: errorMessage,
-        details: errorText
+        details: process.env.NODE_ENV === 'development' ? errorText : 'Contact support if this persists'
       });
     }
 
@@ -98,7 +95,7 @@ export default async function handler(req, res) {
     console.error('Server error:', error);
     res.status(500).json({ 
       message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Contact support if this persists'
     });
   }
 }
