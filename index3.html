@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wert Integration - Direct Method</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .wert-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: block;
+            margin: 20px 0;
+        }
+        .wert-button:hover {
+            background: #0056b3;
+        }
+        .wert-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #dc3545;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 5px;
+        }
+        .success {
+            color: #155724;
+            margin: 10px 0;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 5px;
+        }
+        .loading {
+            color: #007bff;
+            margin: 10px 0;
+        }
+        .config-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .config-section h3 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .widget-container {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .widget-iframe {
+            width: 100%;
+            height: 700px;
+            border: none;
+            display: none;
+        }
+        .method-toggle {
+            margin: 20px 0;
+        }
+        .method-toggle button {
+            margin-right: 10px;
+            padding: 10px 15px;
+            border: 1px solid #007bff;
+            background: white;
+            color: #007bff;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .method-toggle button.active {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wert Cryptocurrency Purchase</h1>
+        
+        <div class="method-toggle">
+            <h3>Choose Integration Method:</h3>
+            <button id="popupMethod" class="active">Popup Window</button>
+            <button id="iframeMethod">Embedded Widget</button>
+        </div>
+        
+        <div class="config-section">
+            <h3>Purchase Configuration</h3>
+            <div class="form-group">
+                <label for="walletAddress">Bitcoin Wallet Address:</label>
+                <input type="text" id="walletAddress" value="39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv" placeholder="Enter BTC wallet address">
+            </div>
+            <div class="form-group">
+                <label for="currencyAmount">Amount (USD):</label>
+                <input type="number" id="currencyAmount" value="100" placeholder="Enter amount in USD">
+            </div>
+            <div class="form-group">
+                <label for="userPhone">Phone (optional):</label>
+                <input type="tel" id="userPhone" placeholder="+1234567890">
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="successMessage" class="success" style="display: none;"></div>
+        <div id="loadingMessage" class="loading" style="display: none;">Creating payment session...</div>
+        
+        <button id="wertButton" class="wert-button">Buy Bitcoin with Wert</button>
+        
+        <div class="widget-container">
+            <iframe id="wertIframe" class="widget-iframe" title="Wert Payment Widget"></iframe>
+        </div>
+    </div>
+    
+    <script>
+        // Your Wert Partner ID - replace with your actual partner ID
+        const PARTNER_ID = "01K1T8VJJ8TY67M49FDXY865GF";
+        const IS_SANDBOX = true; // Set to false for production
+        
+        class WertIntegrationDirect {
+            constructor() {
+                this.button = document.getElementById('wertButton');
+                this.errorDiv = document.getElementById('errorMessage');
+                this.successDiv = document.getElementById('successMessage');
+                this.loadingDiv = document.getElementById('loadingMessage');
+                this.iframe = document.getElementById('wertIframe');
+                this.popupMethodBtn = document.getElementById('popupMethod');
+                this.iframeMethodBtn = document.getElementById('iframeMethod');
+                this.useIframe = false;
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                this.button.addEventListener('click', () => this.handlePurchase());
+                this.popupMethodBtn.addEventListener('click', () => this.setMethod('popup'));
+                this.iframeMethodBtn.addEventListener('click', () => this.setMethod('iframe'));
+            }
+            
+            setMethod(method) {
+                this.useIframe = method === 'iframe';
+                
+                // Update button states
+                this.popupMethodBtn.classList.toggle('active', method === 'popup');
+                this.iframeMethodBtn.classList.toggle('active', method === 'iframe');
+                
+                // Hide iframe if switching to popup
+                if (!this.useIframe) {
+                    this.iframe.style.display = 'none';
+                }
+            }
+            
+            showError(message) {
+                this.errorDiv.textContent = message;
+                this.errorDiv.style.display = 'block';
+                this.hideSuccess();
+                this.hideLoading();
+            }
+            
+            showSuccess(message) {
+                this.successDiv.textContent = message;
+                this.successDiv.style.display = 'block';
+                this.hideError();
+                this.hideLoading();
+            }
+            
+            hideError() {
+                this.errorDiv.style.display = 'none';
+            }
+            
+            hideSuccess() {
+                this.successDiv.style.display = 'none';
+            }
+            
+            showLoading() {
+                this.loadingDiv.style.display = 'block';
+                this.button.disabled = true;
+            }
+            
+            hideLoading() {
+                this.loadingDiv.style.display = 'none';
+                this.button.disabled = false;
+            }
+            
+            async handlePurchase() {
+                this.hideError();
+                this.hideSuccess();
+                this.showLoading();
+                
+                try {
+                    // Get form values
+                    const walletAddress = document.getElementById('walletAddress').value.trim();
+                    const currencyAmount = document.getElementById('currencyAmount').value;
+                    const userPhone = document.getElementById('userPhone').value.trim();
+                    
+                    // Validate inputs
+                    if (!walletAddress) {
+                        throw new Error('Please enter a valid Bitcoin wallet address');
+                    }
+                    
+                    if (!currencyAmount || currencyAmount < 10) {
+                        throw new Error('Minimum purchase amount is $10');
+                    }
+                    
+                    // Create session via your Vercel API endpoint
+                    const session = await this.createSession({
+                        walletAddress,
+                        currencyAmount: parseFloat(currencyAmount),
+                        userPhone
+                    });
+                    
+                    // Open widget with session
+                    this.openWidget(session.session_id);
+                    this.showSuccess('Payment widget opened successfully!');
+                    
+                } catch (error) {
+                    console.error('Wert integration error:', error);
+                    this.showError(error.message || 'Failed to initialize payment. Please try again.');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+            
+            async createSession(config) {
+                const sessionData = {
+                    flow_type: "simple_full_restrict",
+                    wallet_address: config.walletAddress,
+                    currency: "USD",
+                    commodity: "BTC",
+                    network: "bitcoin",
+                    currency_amount: config.currencyAmount
+                };
+                
+                // Add phone if provided
+                if (config.userPhone) {
+                    sessionData.phone = config.userPhone;
+                }
+                
+                // Call your Vercel API endpoint
+                const response = await fetch('/api/create-wert-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sessionData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create payment session');
+                }
+                
+                return await response.json();
+            }
+            
+            openWidget(sessionId) {
+                // Build widget URL with session
+                const baseUrl = IS_SANDBOX ? 'https://sandbox.wert.io' : 'https://wert.io';
+                const widgetUrl = `${baseUrl}/widget/sessions/${sessionId}?partner_id=${PARTNER_ID}&theme=dark`;
+                
+                if (this.useIframe) {
+                    // Embed in iframe
+                    this.iframe.src = widgetUrl;
+                    this.iframe.style.display = 'block';
+                    
+                    // Scroll to iframe
+                    this.iframe.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    // Open in popup
+                    const popup = window.open(
+                        widgetUrl,
+                        'wert-widget',
+                        'width=460,height=700,scrollbars=yes,resizable=yes,location=no,status=no,menubar=no,toolbar=no'
+                    );
+                    
+                    // Check if popup was blocked
+                    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                        throw new Error('Popup blocked! Please allow popups for this site and try again.');
+                    }
+                    
+                    // Monitor popup
+                    const checkClosed = setInterval(() => {
+                        if (popup.closed) {
+                            clearInterval(checkClosed);
+                            console.log('Wert widget closed');
+                            this.showSuccess('Payment widget was closed. Check your wallet for any transactions.');
+                        }
+                    }, 1000);
+                }
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WertIntegrationDirect();
+        });
+    </script>
+</body>
+</html>
