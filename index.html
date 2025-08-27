@@ -338,7 +338,7 @@
     // === Open Wert Widget ===
     function openWertWidget() {
       // Direct widget integration without session (simpler approach)
-      const baseUrl = IS_SANDBOX ? 'https://sandbox.wert.io' : 'https://wert.io';
+      const baseUrl = IS_SANDBOX ? 'https://widget.wert.io' : 'https://wert.io';
       const params = new URLSearchParams({
         partner_id: PARTNER_ID,
         click_id: `shawnsweeps_${Date.now()}`, // Unique identifier for tracking
