@@ -83,12 +83,6 @@
       width: 100%;
     }
 
-    .wert-button[disabled] {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
     .wert-button:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(139, 0, 0, 0.549);
@@ -270,14 +264,12 @@
   <!-- Header -->
   <header>
     <img src="https://shawn-sweepstakes.carrd.co/assets/images/image03.png?v=0c91e9dc" alt="ShawnSweeps Logo">
-    <!-- keep old iframe loader in case it's used elsewhere -->
     <script src="https://widget.wert.io/wert-iframe.js"></script>
   </header>
 
   <!-- Deposit Buttons -->
   <div class="deposit-buttons">
-    <!-- Add data-amount if you want a default amount -->
-    <button class="wert-button" id="wertButton" data-amount="50.00">
+    <button class="wert-button" id="wertButton">
       Deposit
     </button>
   </div>
@@ -287,10 +279,8 @@
     <!-- Games will be injected here -->
   </section>
 
-  <script type="module">
-    import WertWidget from 'https://cdn.jsdelivr.net/npm/@wert-io/widget-initializer/+esm';
-
-    // === Your Games Data (complete list) ===
+  <script>
+    // === Your Games Data (from your file) ===
     const games = [
       {
         id: "megaspinsweeps",
@@ -605,52 +595,55 @@
     games.forEach(game => {
       const card = document.createElement('div');
       card.className = 'game-card';
-      card.innerHTML = `<a href="${game.gameUrl}" target="_blank" rel="noopener noreferrer"><img src="${game.imageUrl}" alt="${game.name}"></a>`;
+      card.innerHTML = `<a href="${game.gameUrl}" target="_blank"><img src="${game.imageUrl}" alt="${game.name}"></a>`;
       gamesContainer.appendChild(card);
     });
 
-    // === Wert Button behavior ===
-    const wertBtn = document.getElementById('wertButton');
-
-    wertBtn.addEventListener('click', async function () {
-      // disable to prevent multiple clicks
-      wertBtn.disabled = true;
-      const originalText = wertBtn.textContent;
-      wertBtn.textContent = "Opening...";
-
-      try {
-        // call your serverless function which calls Wert API securely
-        const resp = await fetch('/api/create-session', { method: 'POST' });
-        const data = await resp.json();
-
-        if (!resp.ok) {
-          console.error('Backend error:', data);
-          alert('Failed to create payment session. Check console for details.');
-          return;
+    // === Handle Wert Widget Button ===
+    document.getElementById('wertButton').addEventListener('click', function() {
+      // Configuration for Wert widget
+      const wertConfig = {
+        partner_id: "01K1T8VJJ8TY67M49FDXY865GF",
+        origin: "https://widget.wert.io",
+        extra: {
+          wallets: [
+            {
+              name: "BTC",
+              network: "bitcoin",
+              address: "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"
+            }
+          ]
         }
+      };
 
-        if (!data.session_id) {
-          console.error('No session_id in response:', data);
-          alert('No session ID returned from server.');
-          return;
-        }
+      // Convert config to URL parameters
+      const params = new URLSearchParams();
+      params.append('partner_id', wertConfig.partner_id);
+      params.append('origin', wertConfig.origin);
+      
+      // Add wallet configurations
+      wertConfig.extra.wallets.forEach((wallet, index) => {
+        params.append(`extra[wallets][${index}][name]`, wallet.name);
+        params.append(`extra[wallets][${index}][network]`, wallet.network);
+        params.append(`extra[wallets][${index}][address]`, wallet.address);
+      });
 
-        // Initialize the Wert widget using the session_id
-        const options = {
-          partner_id: '01K1T8VJJ8TY67M49FDXY865GF', // your public partner id
-          session_id: data.session_id,
-          origin: 'https://widget.wert.io' // required for sandbox; safe to include
-        };
+      // Construct the full URL
+      const wertUrl = `${wertConfig.origin}/widget?${params.toString()}`;
+      
+      // Open Wert widget in a new window/tab
+      const wertWindow = window.open(
+        wertUrl,
+        'wert-widget',
+        'width=400,height=600,scrollbars=yes,resizable=yes'
+      );
 
-        const widget = new WertWidget(options);
-        widget.open();
-      } catch (err) {
-        console.error('Error creating/opening Wert widget:', err);
-        alert('Error opening payment widget. See console for details.');
-      } finally {
-        // re-enable button
-        wertBtn.disabled = false;
-        wertBtn.textContent = originalText;
+      // Focus the new window
+      if (wertWindow) {
+        wertWindow.focus();
+      } else {
+        // Fallback if popup is blocked
+        alert('Please allow popups for this site to use the Wert widget, or click the button again.');
       }
     });
   </script>
