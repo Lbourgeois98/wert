@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -108,13 +107,37 @@
         </div>
     </div>
 
-    <!-- Include Wert Widget SDK -->
-    <script src="https://unpkg.com/@wert-io/widget-initializer@latest/dist/index.js"></script>
+    <script>
+        // Load Wert SDK dynamically with proper error handling
+        function loadWertSDK() {
+            return new Promise((resolve, reject) => {
+                // Check if already loaded
+                if (window.WertWidget) {
+                    resolve(window.WertWidget);
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@wert-io/widget-initializer@latest/dist/index.umd.js';
+                script.onload = () => {
+                    if (window.WertWidget) {
+                        resolve(window.WertWidget);
+                    } else {
+                        reject(new Error('WertWidget not available after script load'));
+                    }
+                };
+                script.onerror = () => {
+                    reject(new Error('Failed to load Wert SDK'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+    </script>
     
     <script>
         // Your Wert Partner ID - replace with your actual partner ID
         const PARTNER_ID = "01K1T8VJJ8TY67M49FDXY865GF";
-        const IS_SANDBOX = false; // Set to false for production
+        const IS_SANDBOX = true; // Set to false for production
         
         class WertIntegration {
             constructor() {
@@ -219,6 +242,9 @@
             
             async initializeWidget(sessionId) {
                 try {
+                    // Ensure Wert SDK is loaded
+                    const WertWidget = await loadWertSDK();
+                    
                     const options = {
                         partner_id: PARTNER_ID,
                         session_id: sessionId,
