@@ -259,7 +259,7 @@
   <script>
     // === Wert Configuration ===
     const PARTNER_ID = "01K1T8VJJ8TY67M49FDXY865GF";
-    const IS_SANDBOX = false; // Set to false for production
+    const IS_SANDBOX = true; // Set to false for production
     const DEFAULT_WALLET_ADDRESS = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv";
 
     // === UI Elements ===
@@ -338,7 +338,7 @@
     // === Open Wert Widget ===
     function openWertWidget() {
       // Direct widget integration without session (simpler approach)
-      const baseUrl = IS_SANDBOX ? 'https://widget.wert.io' : 'https://wert.io';
+      const baseUrl = IS_SANDBOX ? 'https://sandbox.wert.io' : 'https://wert.io';
       const params = new URLSearchParams({
         partner_id: PARTNER_ID,
         click_id: `shawnsweeps_${Date.now()}`, // Unique identifier for tracking
