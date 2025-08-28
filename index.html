@@ -251,14 +251,12 @@
   </section>
 
   <!-- Wert SDK -->
-  <script src="https://unpkg.com/@wert-io/widget-initializer@latest/dist/widget-initializer.js" 
-          onload="console.log('✅ Wert SDK loaded successfully')" 
-          onerror="console.error('❌ Failed to load Wert SDK')"></script>
+  <script src="https://unpkg.com/@wert-io/widget-initializer@latest/dist/widget-initializer.js"></script>
 
   <script>
     // === Configuration ===
     const PARTNER_ID = "01K1T8VJJ8TY67M49FDXY865GF";
-    const IS_SANDBOX = false; // Set to true for testing
+    const IS_SANDBOX = false;
     const DEFAULT_WALLET_ADDRESS = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv";
 
     // === UI Elements ===
@@ -278,7 +276,7 @@
 
     function showSuccess(message) {
       console.log('✅ Success:', message);
-      successDiv.innerHTML = message; // Allow HTML for formatted messages
+      successDiv.innerHTML = message;
       successDiv.classList.remove('hidden');
       hideError();
       hideLoading();
@@ -328,21 +326,18 @@
           body: JSON.stringify(sessionData)
         });
 
-        console.log('📡 API Response status:', response.status);
-
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
           throw new Error(errorData.message || `API Error: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('✅ Session created successfully');
+        console.log('✅ Session created successfully:', result);
         return result;
 
       } catch (error) {
         console.error('❌ Session creation failed:', error);
         
-        // Enhanced error handling
         if (error.message.includes('fetch')) {
           throw new Error('Network error. Please check your connection and try again.');
         } else if (error.message.includes('API Error: 500')) {
@@ -360,14 +355,14 @@
         
         // Check if WertWidget is available
         if (typeof WertWidget === 'undefined') {
-          console.error('❌ WertWidget not found');
+          console.error('❌ WertWidget not found - SDK not loaded');
           throw new Error('Payment system not loaded. Please refresh the page and try again.');
         }
 
-        console.log('✅ WertWidget found, creating session...');
+        console.log('✅ WertWidget SDK loaded');
         showLoading('Creating secure payment session...');
         
-        // Create session via your API
+        // Create session via API
         const session = await createWertSession({
           walletAddress: DEFAULT_WALLET_ADDRESS,
           currencyAmount: 100
@@ -378,21 +373,15 @@
         }
 
         console.log('✅ Session created, initializing widget...');
-        showLoading('Initializing payment widget...');
+        showLoading('Opening payment widget...');
 
         // Widget configuration
         const options = {
           partner_id: PARTNER_ID,
           session_id: session.session_id,
           click_id: `shawnsweeps_${Date.now()}`,
-          
-          // Only add origin for sandbox
-          ...(IS_SANDBOX && { origin: 'https://sandbox.wert.io' }),
-          
-          // UI customization
           theme: 'dark',
           lang: 'en',
-          brand_color: '#ff0000',
           
           // Event listeners
           listeners: {
@@ -412,18 +401,14 @@
             close: () => {
               console.log('🔒 Wert widget closed by user');
               hideLoading();
-              showSuccess('Payment widget closed.<br>Check your wallet for any completed transactions.');
-            },
-            
-            position: (data) => {
-              console.log('📍 Widget position:', data);
+              showSuccess('Payment widget closed. Check your wallet for any completed transactions.');
             },
             
             payment_status: (data) => {
               console.log('💳 Payment status update:', data);
               
               if (data.status === 'success') {
-                showSuccess('🎉 Payment completed successfully!<br>Bitcoin should arrive in your wallet shortly.');
+                showSuccess('🎉 Payment completed successfully! Bitcoin should arrive in your wallet shortly.');
               } else if (data.status === 'failed') {
                 showError('❌ Payment failed: ' + (data.message || 'Please try again or contact support.'));
               } else if (data.status === 'pending') {
@@ -433,7 +418,7 @@
           }
         };
 
-        console.log('🔧 Initializing widget with partner ID:', PARTNER_ID);
+        console.log('🔧 Creating widget with options:', options);
         
         // Create and open the widget
         const wertWidget = new WertWidget(options);
@@ -442,13 +427,20 @@
         wertWidget.open();
         
         console.log('✅ Widget initialization complete');
+        
+        // Hide loading after a short delay to ensure widget is opening
+        setTimeout(() => {
+          if (!loadingDiv.classList.contains('hidden')) {
+            hideLoading();
+          }
+        }, 2000);
+        
         return wertWidget;
 
       } catch (error) {
         console.error('❌ Widget initialization failed:', error);
         hideLoading();
         
-        // Specific error handling with user-friendly messages
         let userMessage = error.message;
         
         if (error.message.includes('session')) {
@@ -459,61 +451,14 @@
           userMessage = 'Connection error. Please check your internet and try again.';
         }
         
-        // Offer fallback option
-        const useSimpleLink = confirm(
-          `${userMessage}\n\nWould you like to open a direct payment link instead?\n\n(You'll need to manually enter your Bitcoin address)`
-        );
-        
-        if (useSimpleLink) {
-          openWertSimpleLink();
-        } else {
-          showError(`Failed to load payment widget: ${userMessage}`);
-        }
-        
-        return null;
-      }
-    }
-
-    // === Simple Fallback Link ===
-    function openWertSimpleLink() {
-      try {
-        const baseUrl = IS_SANDBOX ? 'https://sandbox.wert.io' : 'https://wert.io';
-        const params = new URLSearchParams({
-          partner_id: PARTNER_ID,
-          click_id: `shawnsweeps_${Date.now()}`,
-        });
-        
-        const simpleUrl = `${baseUrl}/?${params.toString()}`;
-        console.log('🔗 Opening simple payment link:', simpleUrl);
-        
-        const newTab = window.open(simpleUrl, '_blank', 'width=800,height=700');
-        
-        if (!newTab) {
-          throw new Error('Popup blocked! Please allow popups for this site.');
-        }
-        
-        // Copy wallet address to clipboard
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(DEFAULT_WALLET_ADDRESS).then(() => {
-            showSuccess(`Payment page opened in new tab.<br><br><strong>Your Bitcoin address (copied to clipboard):</strong><br>${DEFAULT_WALLET_ADDRESS}<br><br>Please paste this address when prompted in the payment form.`);
-          }).catch(() => {
-            showSuccess(`Payment page opened in new tab.<br><br><strong>Your Bitcoin address:</strong><br>${DEFAULT_WALLET_ADDRESS}<br><br>Please copy and paste this address when prompted in the payment form.`);
-          });
-        } else {
-          showSuccess(`Payment page opened in new tab.<br><br><strong>Your Bitcoin address:</strong><br>${DEFAULT_WALLET_ADDRESS}<br><br>Please copy and paste this address when prompted in the payment form.`);
-        }
-        
-        return newTab;
-        
-      } catch (error) {
-        console.error('❌ Simple link failed:', error);
-        showError('Failed to open payment page: ' + error.message);
+        showError(`Failed to load payment widget: ${userMessage}`);
         return null;
       }
     }
 
     // === Handle Deposit Button Click ===
-    async function handleWertDeposit() {
+    async function handleWertDeposit(event) {
+      event.preventDefault();
       console.log('🎯 Deposit button clicked');
       
       hideError();
@@ -865,12 +810,11 @@
       // Initialize games
       initializeGames();
       
-      // Check if running on Vercel
-      const isVercel = window.location.hostname.includes('vercel.app') || 
-                       window.location.hostname.includes('.vercel.app');
-      
-      if (isVercel) {
-        console.log('🌐 Running on Vercel');
+      // Check SDK loading
+      if (typeof WertWidget !== 'undefined') {
+        console.log('✅ Wert SDK loaded successfully');
+      } else {
+        console.warn('⚠️ Wert SDK not yet loaded - will check again when button is clicked');
       }
       
       // Log current environment
@@ -891,6 +835,9 @@
     // === Error Handling ===
     window.addEventListener('error', (event) => {
       console.error('💥 Global error:', event.error);
+      if (event.error && event.error.message && event.error.message.includes('WertWidget')) {
+        showError('Payment system failed to load. Please refresh the page and try again.');
+      }
     });
 
     window.addEventListener('unhandledrejection', (event) => {
