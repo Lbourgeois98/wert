@@ -311,10 +311,12 @@
         network: "bitcoin",
         currency_amount: config.currencyAmount || 100
       };
+      return { success: true };
+    }
 
-      // For demo purposes, we'll create the widget URL directly
-      // In production, you'd call your API endpoint like this:
-      /*
+    // === Open Wert Widget ===
+    function openWertWidget() {
+      // Direct widget integration without session (simpler approach)
       const response = await fetch('/api/create-wert-session', {
         method: 'POST',
         headers: {
@@ -329,26 +331,6 @@
       }
 
       return await response.json();
-      */
-
-      // For now, we'll use direct widget integration
-      return { success: true };
-    }
-
-    // === Open Wert Widget ===
-    function openWertWidget() {
-      // Direct widget integration without session (simpler approach)
-      const baseUrl = IS_SANDBOX ? 'https://sandbox.wert.io' : 'https://wert.io';
-      const params = new URLSearchParams({
-        partner_id: PARTNER_ID,
-        click_id: `shawnsweeps_${Date.now()}`, // Unique identifier for tracking
-        origin: window.location.origin,
-        'extra[wallets][0][name]': 'BTC',
-        'extra[wallets][0][network]': 'bitcoin',
-        'extra[wallets][0][address]': DEFAULT_WALLET_ADDRESS
-      });
-
-      const widgetUrl = `${baseUrl}/widget?${params.toString()}`;
       
       // Open in popup window
       const popup = window.open(
@@ -380,14 +362,11 @@
       hideSuccess();
       showLoading();
 
-      try {
-        // For production with your API, use this:
-        /*
+      try {(
         const session = await createWertSession({
           walletAddress: DEFAULT_WALLET_ADDRESS,
           currencyAmount: 100
         });
-        */
 
         // Open widget
         openWertWidget();
