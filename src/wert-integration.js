@@ -25,7 +25,12 @@ export class WertIntegration {
 
     console.log('📤 Sending session data:', sessionData);
 
-    const response = await fetch('/api/create-wert-session', {
+    // Use Railway backend URL in production, localhost in development
+    const apiUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://your-app-name.railway.app/api/create-wert-session'
+      : '/api/create-wert-session';
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
