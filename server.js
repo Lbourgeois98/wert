@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+console.log('🚀 Starting server...');
+console.log('📍 Port:', PORT);
+console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
 
 // Middleware
 app.use(cors({
@@ -14,7 +17,17 @@ app.use(express.json());
 
 // Health check endpoint for Railway
 app.get('/health', (req, res) => {
+  console.log('🏥 Health check requested');
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'ShawnSweeps Backend API',
+    status: 'running',
+    endpoints: ['/health', '/api/create-wert-session']
+  });
 });
 
 // Wert session creation endpoint
