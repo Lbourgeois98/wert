@@ -1,113 +1,125 @@
-// Official Wert Widget Integration for Static Sites
-import { WertWidget } from '@wert-io/widget-initializer';
-
 export class WertIntegration {
   constructor() {
     this.partnerId = '01K1T8VJJ8TY67M49FDXY865GF';
-    this.widget = null;
+    this.baseUrl = 'https://widget.wert.io';
   }
 
   /**
-   * Initialize and open the Wert widget using official documentation
+   * Create a session via backend API and return session_id
    */
-  async openWidget(config = {}) {
+  async createSession(config) {
+    console.log('🔄 Creating Wert session via backend...');
+    
+    const sessionData = {
+      wallet_address: config.walletAddress,
+      currency_amount: config.currencyAmount,
+      currency: config.currency || 'USD',
+      commodity: config.commodity || 'BTC',
+      network: config.network || 'bitcoin'
+    };
+
+    // Add phone if provided
+    if (config.userPhone) {
+      sessionData.phone = config.userPhone;
+    }
+
+    console.log('📤 Sending session data:', sessionData);
+
+    const response = await fetch('/api/create-wert-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(sessionData)
+    });
+
+    // Handle response
+    const responseText = await response.text();
+    console.log('📥 Backend response status:', response.status);
+    console.log('📥 Backend response text:', responseText);
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to create payment session';
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch (e) {
+        errorMessage = `Backend Error: ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // Parse successful response
+    let sessionResponse;
     try {
-      console.log('🚀 Initializing Wert widget...');
+      sessionResponse = JSON.parse(responseText);
+    } catch (e) {
+      console.error('❌ Failed to parse backend response:', e);
+      throw new Error('Invalid response from backend');
+    }
 
-      // Create widget instance with your partner ID and configuration
-      this.widget = new WertWidget({
-        partner_id: this.partnerId,
-        
-        // Transaction details
-        click_id: this.generateClickId(), // Unique identifier for this transaction
-        origin: window.location.origin,
-        
-        // Pre-fill transaction details
-        commodity: config.commodity || 'BTC',
-        network: config.network || 'bitcoin',
-        address: config.walletAddress || '39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv',
-        currency: config.currency || 'USD',
-        currency_amount: config.currencyAmount || 100,
-        
-        // Widget appearance
-        theme: config.theme || 'dark',
-        color_buttons: '#ff0000',
-        color_secondary: '#000000',
-        
-        // Widget behavior
-        redirect_url: window.location.href,
-        close_redirect_url: window.location.href,
-        
-        // Additional options
-        ...config.widgetOptions
-      });
+    if (!sessionResponse.session_id) {
+      console.error('❌ No session_id in response:', sessionResponse);
+      throw new Error('No session ID received from backend');
+    }
 
-      console.log('✅ Widget initialized successfully');
+    console.log('✅ Session created successfully:', sessionResponse.session_id);
+    return sessionResponse;
+  }
+
+  /**
+   * Open Wert widget using session_id
+   */
+  openWidget(sessionId, options = {}) {
+    console.log('🚀 Opening Wert widget with session:', sessionId);
+
+    // Build widget URL with session
+    const widgetUrl = `${this.baseUrl}/widget/sessions/${sessionId}?partner_id=${this.partnerId}&theme=dark`;
+    
+    console.log('🔗 Widget URL:', widgetUrl);
+
+    // Open in popup window
+    const popup = window.open(
+      widgetUrl,
+      'wert-widget',
+      'width=460,height=700,scrollbars=yes,resizable=yes,location=no,status=no,menubar=no,toolbar=no'
+    );
+
+    // Check if popup was blocked
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      throw new Error('Popup blocked! Please allow popups for this site and try again.');
+    }
+
+    // Monitor popup for close events
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        console.log('🔒 Wert widget closed');
+        // You can add callback here if needed
+      }
+    }, 1000);
+
+    return popup;
+  }
+
+  /**
+   * Complete flow: create session and open widget
+   */
+  async openWidgetWithSession(config) {
+    try {
+      // Step 1: Create session via backend
+      const sessionResponse = await this.createSession(config);
       
-      // Open the widget
-      this.widget.open();
-      console.log('🎉 Widget opened');
+      // Step 2: Open widget with session_id
+      const popup = this.openWidget(sessionResponse.session_id);
       
-      return this.widget;
+      return {
+        sessionId: sessionResponse.session_id,
+        popup: popup
+      };
     } catch (error) {
-      console.error('❌ Failed to initialize widget:', error);
+      console.error('❌ Failed to open widget with session:', error);
       throw error;
-    }
-  }
-
-  /**
-   * Generate a unique click ID for transaction tracking
-   */
-  generateClickId() {
-    return `shawnsweeps_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * Close the widget
-   */
-  closeWidget() {
-    if (this.widget) {
-      this.widget.close();
-    }
-  }
-
-  /**
-   * Set up event listeners for the widget
-   */
-  setupEventListeners(callbacks = {}) {
-    if (!this.widget) {
-      console.warn('Widget not initialized. Call openWidget() first.');
-      return;
-    }
-
-    // Widget opened
-    if (callbacks.onOpen) {
-      this.widget.on('open', callbacks.onOpen);
-    }
-
-    // Widget closed
-    if (callbacks.onClose) {
-      this.widget.on('close', callbacks.onClose);
-    }
-
-    // Payment completed
-    if (callbacks.onPayment) {
-      this.widget.on('payment', callbacks.onPayment);
-    }
-
-    // Error occurred
-    if (callbacks.onError) {
-      this.widget.on('error', callbacks.onError);
-    }
-
-    // Position changed
-    if (callbacks.onPosition) {
-      this.widget.on('position', callbacks.onPosition);
-    }
-
-    // Payment status updates
-    if (callbacks.onStatusUpdate) {
-      this.widget.on('status', callbacks.onStatusUpdate);
     }
   }
 }

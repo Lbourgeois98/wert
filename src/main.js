@@ -1,4 +1,4 @@
-// Main application logic using official Wert widget
+// Main application logic using backend session API
 import { WertIntegration } from './wert-integration.js';
 
 class ShawnSweepsApp {
@@ -61,45 +61,32 @@ class ShawnSweepsApp {
     try {
       console.log('🚀 Starting Wert deposit process...');
 
-      // Configuration for the widget
+      // Configuration for the session
       const config = {
-        commodity: 'BTC',
-        network: 'bitcoin',
         walletAddress: '39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv',
-        currency: 'USD',
         currencyAmount: 100,
-        theme: 'dark'
+        currency: 'USD',
+        commodity: 'BTC',
+        network: 'bitcoin'
       };
 
-      // Set up widget event listeners
-      const callbacks = {
-        onOpen: () => {
-          console.log('✅ Widget opened successfully');
-          this.showSuccess('Payment widget opened successfully!');
-        },
-        onClose: () => {
-          console.log('🔒 Widget closed');
+      console.log('📡 Creating session and opening widget...');
+      
+      // Create session via backend and open widget
+      const result = await this.wertIntegration.openWidgetWithSession(config);
+      
+      console.log('🎉 Widget opened successfully with session:', result.sessionId);
+      this.showSuccess('Payment widget opened successfully! Complete your purchase in the popup window.');
+
+      // Monitor popup for close events
+      const popup = result.popup;
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          console.log('🔒 Widget popup closed');
           this.showSuccess('Payment widget was closed. Check your wallet for any transactions.');
-        },
-        onPayment: (data) => {
-          console.log('💰 Payment completed:', data);
-          this.showSuccess('Payment completed successfully! Check your wallet for Bitcoin.');
-        },
-        onError: (error) => {
-          console.error('❌ Widget error:', error);
-          this.showError(`Payment error: ${error.message || 'Unknown error'}`);
-        },
-        onStatusUpdate: (status) => {
-          console.log('📊 Payment status update:', status);
         }
-      };
-
-      // Initialize and open widget
-      console.log('📡 Opening Wert widget...');
-      const widget = await this.wertIntegration.openWidget(config);
-      this.wertIntegration.setupEventListeners(callbacks);
-
-      console.log('🎉 Widget setup completed');
+      }, 1000);
 
     } catch (error) {
       console.error('💥 Wert integration error:', error);
@@ -107,10 +94,14 @@ class ShawnSweepsApp {
       // Provide user-friendly error messages
       let errorMessage = 'Failed to initialize payment widget. Please try again.';
       
-      if (error.message.includes('partner_id')) {
-        errorMessage = 'Widget configuration error. Please contact support.';
-      } else if (error.message.includes('network')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
+      if (error.message.includes('Popup blocked')) {
+        errorMessage = 'Popup blocked! Please allow popups for this site and try again.';
+      } else if (error.message.includes('wallet_address')) {
+        errorMessage = 'Invalid wallet address. Please contact support.';
+      } else if (error.message.includes('currency_amount')) {
+        errorMessage = 'Invalid amount. Minimum purchase is $10.';
+      } else if (error.message.includes('Backend Error')) {
+        errorMessage = 'Backend service unavailable. Please try again later.';
       } else if (error.message) {
         errorMessage = error.message;
       }
