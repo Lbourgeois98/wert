@@ -53,8 +53,16 @@ app.post('/api/create-wert-session', async (req, res) => {
     }
 
     // Your Wert credentials
-    const WERT_API_KEY = process.env.WERT_API_KEY || '776572742d70726f642d33343733656162352d653566312d343363352d626535312d616531336165643361643539';
+    const WERT_API_KEY = process.env.WERT_API_KEY;
     const PARTNER_ID = '01K1T8VJJ8TY67M49FDXY865GF';
+
+    // Validate API key exists
+    if (!WERT_API_KEY) {
+      console.error('❌ WERT_API_KEY not found in environment variables');
+      return res.status(500).json({ 
+        error: 'Server configuration error: Missing API key' 
+      });
+    }
 
     // Prepare session data
     const sessionData = {
