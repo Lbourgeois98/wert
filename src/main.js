@@ -1,4 +1,4 @@
-// Main application logic using backend API
+// Main application logic using official Wert widget
 import { WertIntegration } from './wert-integration.js';
 
 class ShawnSweepsApp {
@@ -61,17 +61,14 @@ class ShawnSweepsApp {
     try {
       console.log('🚀 Starting Wert deposit process...');
 
-      // Configuration for the widget - this will be sent to your backend
+      // Configuration for the widget
       const config = {
-        flowType: 'simple_full_restrict',
-        walletAddress: '39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv',
-        currency: 'USD',
         commodity: 'BTC',
         network: 'bitcoin',
+        walletAddress: '39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv',
+        currency: 'USD',
         currencyAmount: 100,
-        theme: 'dark',
-        width: 460,
-        height: 700
+        theme: 'dark'
       };
 
       // Set up widget event listeners
@@ -92,13 +89,13 @@ class ShawnSweepsApp {
           console.error('❌ Widget error:', error);
           this.showError(`Payment error: ${error.message || 'Unknown error'}`);
         },
-        onPosition: (position) => {
-          console.log('📍 Widget position changed:', position);
+        onStatusUpdate: (status) => {
+          console.log('📊 Payment status update:', status);
         }
       };
 
-      // Initialize and open widget (this will call your backend API)
-      console.log('📡 Calling backend to create session...');
+      // Initialize and open widget
+      console.log('📡 Opening Wert widget...');
       const widget = await this.wertIntegration.openWidget(config);
       this.wertIntegration.setupEventListeners(callbacks);
 
@@ -108,12 +105,12 @@ class ShawnSweepsApp {
       console.error('💥 Wert integration error:', error);
       
       // Provide user-friendly error messages
-      let errorMessage = 'Failed to initialize payment. Please try again.';
+      let errorMessage = 'Failed to initialize payment widget. Please try again.';
       
-      if (error.message.includes('fetch')) {
-        errorMessage = 'Unable to connect to payment service. Please check your connection.';
-      } else if (error.message.includes('API')) {
-        errorMessage = 'Payment service temporarily unavailable. Please try again later.';
+      if (error.message.includes('partner_id')) {
+        errorMessage = 'Widget configuration error. Please contact support.';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
       } else if (error.message) {
         errorMessage = error.message;
       }

@@ -1,120 +1,65 @@
-// Wert Widget Integration using backend API
+// Official Wert Widget Integration for Static Sites
 import { WertWidget } from '@wert-io/widget-initializer';
 
 export class WertIntegration {
   constructor() {
     this.partnerId = '01K1T8VJJ8TY67M49FDXY865GF';
-    this.isSandbox = false; // Set to false for production
     this.widget = null;
   }
 
   /**
-   * Create a payment session via your backend API
-   */
-  async createSession(sessionData) {
-    try {
-      console.log('Creating session via backend API:', sessionData);
-      
-      const response = await fetch('/api/create-wert-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sessionData)
-      });
-
-      // Read response as text first to handle empty or non-JSON responses
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
-
-      if (!response.ok) {
-        let errorMessage = `Backend API Error: ${response.status}`;
-        if (responseText) {
-          try {
-            const errorData = JSON.parse(responseText);
-            errorMessage = errorData.message || errorMessage;
-          } catch (parseError) {
-            errorMessage = `${errorMessage} - Response: ${responseText}`;
-          }
-        }
-        throw new Error(errorMessage);
-      }
-
-      // Parse JSON safely
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Failed to parse JSON response:', responseText);
-        throw new Error(`Invalid JSON response from backend: ${parseError.message}`);
-      }
-
-      console.log('Session created successfully:', result);
-      return result;
-    } catch (error) {
-      console.error('Session creation failed:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Initialize the Wert widget with session
-   */
-  async initializeWidget(config = {}) {
-    try {
-      // Prepare session data for backend
-      const sessionData = {
-        flow_type: config.flowType || 'simple_full_restrict',
-        wallet_address: config.walletAddress || '39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv',
-        currency: config.currency || 'USD',
-        commodity: config.commodity || 'BTC',
-        network: config.network || 'bitcoin'
-      };
-
-      // Add optional fields
-      if (config.currencyAmount) {
-        sessionData.currency_amount = parseFloat(config.currencyAmount);
-      }
-      if (config.phone) {
-        sessionData.phone = config.phone;
-      }
-
-      console.log('Creating session with data:', sessionData);
-      const session = await this.createSession(sessionData);
-
-      // Initialize widget with session from backend
-      this.widget = new WertWidget({
-        partner_id: this.partnerId,
-        session_id: session.session_id,
-        theme: config.theme || 'dark',
-        width: config.width || 460,
-        height: config.height || 700,
-        ...config.widgetOptions
-      });
-
-      console.log('Widget initialized with session:', session.session_id);
-      return this.widget;
-    } catch (error) {
-      console.error('Widget initialization failed:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Open the widget
+   * Initialize and open the Wert widget using official documentation
    */
   async openWidget(config = {}) {
     try {
-      if (!this.widget) {
-        await this.initializeWidget(config);
-      }
+      console.log('🚀 Initializing Wert widget...');
+
+      // Create widget instance with your partner ID and configuration
+      this.widget = new WertWidget({
+        partner_id: this.partnerId,
+        
+        // Transaction details
+        click_id: this.generateClickId(), // Unique identifier for this transaction
+        origin: window.location.origin,
+        
+        // Pre-fill transaction details
+        commodity: config.commodity || 'BTC',
+        network: config.network || 'bitcoin',
+        address: config.walletAddress || '39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv',
+        currency: config.currency || 'USD',
+        currency_amount: config.currencyAmount || 100,
+        
+        // Widget appearance
+        theme: config.theme || 'dark',
+        color_buttons: '#ff0000',
+        color_secondary: '#000000',
+        
+        // Widget behavior
+        redirect_url: window.location.href,
+        close_redirect_url: window.location.href,
+        
+        // Additional options
+        ...config.widgetOptions
+      });
+
+      console.log('✅ Widget initialized successfully');
       
+      // Open the widget
       this.widget.open();
+      console.log('🎉 Widget opened');
+      
       return this.widget;
     } catch (error) {
-      console.error('Failed to open widget:', error);
+      console.error('❌ Failed to initialize widget:', error);
       throw error;
     }
+  }
+
+  /**
+   * Generate a unique click ID for transaction tracking
+   */
+  generateClickId() {
+    return `shawnsweeps_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
@@ -131,7 +76,7 @@ export class WertIntegration {
    */
   setupEventListeners(callbacks = {}) {
     if (!this.widget) {
-      console.warn('Widget not initialized. Call initializeWidget() first.');
+      console.warn('Widget not initialized. Call openWidget() first.');
       return;
     }
 
@@ -158,6 +103,11 @@ export class WertIntegration {
     // Position changed
     if (callbacks.onPosition) {
       this.widget.on('position', callbacks.onPosition);
+    }
+
+    // Payment status updates
+    if (callbacks.onStatusUpdate) {
+      this.widget.on('status', callbacks.onStatusUpdate);
     }
   }
 }
