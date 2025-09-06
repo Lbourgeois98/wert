@@ -29,10 +29,9 @@ NODE_ENV=production
 Once deployed, update your frontend to use the Railway URL:
 
 ```javascript
-// In src/wert-integration.js, update the API URL
-const response = await fetch('https://your-app-name.railway.app/api/create-wert-session', {
-  // ... rest of the code
-});
+// Your URLs are now configured:
+// Railway: https://wert-production-029b.up.railway.app
+// Netlify: https://shawnswert.netlify.app
 ```
 
 ## API Endpoints

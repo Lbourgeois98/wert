@@ -27,7 +27,7 @@ export class WertIntegration {
 
     // Use Railway backend URL in production, localhost in development
     const apiUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://your-app-name.railway.app/api/create-wert-session'
+      ? 'https://wert-production-029b.up.railway.app/api/create-wert-session'
       : '/api/create-wert-session';
     
     const response = await fetch(apiUrl, {
