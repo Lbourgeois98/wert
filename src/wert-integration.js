@@ -4,7 +4,7 @@ import { WertWidget } from '@wert-io/widget-initializer';
 export class WertIntegration {
   constructor() {
     this.partnerId = '01K1T8VJJ8TY67M49FDXY865GF';
-    this.isSandbox = true; // Set to false for production
+    this.isSandbox = false; // Set to false for production
     this.widget = null;
   }
 
