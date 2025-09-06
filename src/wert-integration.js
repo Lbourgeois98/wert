@@ -1,27 +1,23 @@
-// Wert Widget Integration using @wert-io/widget-initializer
+// Wert Widget Integration using backend API
 import { WertWidget } from '@wert-io/widget-initializer';
 
 export class WertIntegration {
   constructor() {
     this.partnerId = '01K1T8VJJ8TY67M49FDXY865GF';
-    this.apiKey = '776572742d70726f642d33343733656162352d653566312d343363352d626535312d616531336165643361643539';
     this.isSandbox = true; // Set to false for production
     this.widget = null;
   }
 
   /**
-   * Create a payment session via Wert API
+   * Create a payment session via your backend API
    */
   async createSession(sessionData) {
-    const apiUrl = this.isSandbox 
-      ? 'https://partner-sandbox.wert.io/api/external/hpp/create-session'
-      : 'https://partner.wert.io/api/external/hpp/create-session';
-
     try {
-      const response = await fetch(apiUrl, {
+      console.log('Creating session via backend API:', sessionData);
+      
+      const response = await fetch('/api/create-wert-session', {
         method: 'POST',
         headers: {
-          'X-Api-Key': this.apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(sessionData)
@@ -29,10 +25,12 @@ export class WertIntegration {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `API Error: ${response.status}`);
+        throw new Error(errorData.message || `Backend API Error: ${response.status}`);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('Session created successfully:', result);
+      return result;
     } catch (error) {
       console.error('Session creation failed:', error);
       throw error;
@@ -44,14 +42,13 @@ export class WertIntegration {
    */
   async initializeWidget(config = {}) {
     try {
-      // Create session first
+      // Prepare session data for backend
       const sessionData = {
-        flow_type: 'simple_full_restrict',
+        flow_type: config.flowType || 'simple_full_restrict',
         wallet_address: config.walletAddress || '39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv',
         currency: config.currency || 'USD',
         commodity: config.commodity || 'BTC',
-        network: config.network || 'bitcoin',
-        ...config.sessionData
+        network: config.network || 'bitcoin'
       };
 
       // Add optional fields
@@ -64,9 +61,8 @@ export class WertIntegration {
 
       console.log('Creating session with data:', sessionData);
       const session = await this.createSession(sessionData);
-      console.log('Session created:', session);
 
-      // Initialize widget with session
+      // Initialize widget with session from backend
       this.widget = new WertWidget({
         partner_id: this.partnerId,
         session_id: session.session_id,
@@ -76,6 +72,7 @@ export class WertIntegration {
         ...config.widgetOptions
       });
 
+      console.log('Widget initialized with session:', session.session_id);
       return this.widget;
     } catch (error) {
       console.error('Widget initialization failed:', error);

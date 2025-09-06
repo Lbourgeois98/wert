@@ -216,7 +216,6 @@
     }
   </style>
   <script src="https://widget.wert.io/wert-iframe.js"></script>
-  <script type="module" src="src/main.js"></script>
 </head>
 <body>
 
@@ -577,5 +576,8 @@
       gamesContainer.appendChild(card);
     });
   </script>
+  
+  <!-- Load main app after games are rendered -->
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>
