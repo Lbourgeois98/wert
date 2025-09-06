@@ -27,7 +27,7 @@ export class WertIntegration {
 
     // Use Railway backend URL in production, localhost proxy in development
     const isProduction = window.location.hostname !== 'localhost';
-    const apiUrl = isProduction 
+    const apiUrl = import.meta.env.MODE === 'production' 
       ? 'https://wert-production-029b.up.railway.app/api/create-wert-session'
       : '/api/create-wert-session';
     
