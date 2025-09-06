@@ -23,12 +23,32 @@ export class WertIntegration {
         body: JSON.stringify(sessionData)
       });
 
+      // Read response as text first to handle empty or non-JSON responses
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Backend API Error: ${response.status}`);
+        let errorMessage = `Backend API Error: ${response.status}`;
+        if (responseText) {
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.message || errorMessage;
+          } catch (parseError) {
+            errorMessage = `${errorMessage} - Response: ${responseText}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
+      // Parse JSON safely
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', responseText);
+        throw new Error(`Invalid JSON response from backend: ${parseError.message}`);
+      }
+
       console.log('Session created successfully:', result);
       return result;
     } catch (error) {
